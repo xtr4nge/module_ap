@@ -1,4 +1,4 @@
-module_mana
+module_ap
 ============
 
-FruityWifi mana module
+FruityWifi AP module
