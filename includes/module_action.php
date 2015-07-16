@@ -247,6 +247,9 @@ if($service != "" and $ap_mode == "1") {
 if($service != "" and $ap_mode == "2") { // AIRCRACK (airbase-ng)
 	if ($action == "start") {
 
+		// SETUP NetworkManager
+		setNetworkManager();
+
 		$exec = "/usr/bin/sudo /usr/sbin/airmon-ng stop mon0";
 		exec_fruitywifi($exec);
 	
@@ -293,6 +296,9 @@ if($service != "" and $ap_mode == "2") { // AIRCRACK (airbase-ng)
 		exec_fruitywifi($exec);
 
 	} else if($action == "stop") {
+
+		// REMOVE lines from NetworkManager
+		cleanNetworkManager();
 
 		$exec = "$bin_killall airbase-ng";
 		exec_fruitywifi($exec);
