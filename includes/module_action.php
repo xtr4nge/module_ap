@@ -113,12 +113,13 @@ function copyLogsHistory() {
 if($service != "" and $ap_mode == "1") {
 	if ($action == "start") {
 		
+		// SETUP NetworkManager
+		setNetworkManager();
+		
 		$exec = "$bin_ifconfig $io_in_iface down";
 		exec_fruitywifi($exec);
 		$exec = "$bin_ifconfig $io_in_iface 0.0.0.0";
 		exec_fruitywifi($exec);
-		
-		setNetworkManager();
 		
 		$exec = "$bin_killall hostapd";	
 		exec_fruitywifi($exec);
@@ -343,13 +344,13 @@ if($service != ""  and $ap_mode == "3") {
 		}
 		*/
 		
+		// SETUP NetworkManager
+		setNetworkManager();
+		
 		$exec = "$bin_ifconfig $io_in_iface down";
 		exec_fruitywifi($exec);
 		$exec = "$bin_ifconfig $io_in_iface 0.0.0.0";
 		exec_fruitywifi($exec);
-		
-		// SETUP NetworkManager
-		setNetworkManager();
 		
 		$exec = "$bin_killall hostapd";
 		exec_fruitywifi($exec);
@@ -517,13 +518,13 @@ if($service != ""  and $ap_mode == "4") {
 		}
 		*/
 		
+		// SETUP NetworkManager
+		setNetworkManager();
+		
 		$exec = "$bin_ifconfig $io_in_iface down";
 		exec_fruitywifi($exec);
 		$exec = "$bin_ifconfig $io_in_iface 0.0.0.0";
 		exec_fruitywifi($exec);
-		
-		// SETUP NetworkManager
-		setNetworkManager();
 		
 		$exec = "$bin_killall hostapd";
 		exec_fruitywifi($exec);
