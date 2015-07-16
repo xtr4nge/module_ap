@@ -53,6 +53,34 @@ function flushIptables() {
 	echo $exec;
 }
 
+function setNetworkManager() {
+	
+	global $io_in_iface;
+	global $bin_sed;
+	global $bin_echo;
+	
+	$exec = "macchanger --show $io_in_iface |grep 'Permanent'";
+	exec($exec, $output);
+	$mac = explode(" ", $output[0]);
+	
+	$exec = "grep '^unmanaged-devices' /etc/NetworkManager/NetworkManager.conf";
+	$ispresent = exec($exec);
+	
+	$exec = "$bin_sed -i '/unmanaged/d' /etc/NetworkManager/NetworkManager.conf";
+	exec_fruitywifi($exec);
+	$exec = "$bin_sed -i '/\[keyfile\]/d' /etc/NetworkManager/NetworkManager.conf";
+	exec_fruitywifi($exec);
+	
+	if ($ispresent == "") {
+		$exec = "$bin_echo '[keyfile]' >> /etc/NetworkManager/NetworkManager.conf";
+		exec_fruitywifi($exec);
+
+		$exec = "$bin_echo 'unmanaged-devices=mac:".$mac[2].";interface-name:".$io_in_iface."' >> /etc/NetworkManager/NetworkManager.conf";
+		exec_fruitywifi($exec);
+	}
+	
+}
+
 function copyLogsHistory() {
 	
 	global $bin_cp;
@@ -78,6 +106,8 @@ if($service != "" and $ap_mode == "1") {
 		exec_fruitywifi($exec);
 		$exec = "$bin_ifconfig $io_in_iface 0.0.0.0";
 		exec_fruitywifi($exec);
+		
+		setNetworkManager();
 		
 		$exec = "$bin_killall hostapd";	
 		exec_fruitywifi($exec);
@@ -437,7 +467,8 @@ if($service != ""  and $ap_mode == "4") {
 		//unmanaged-devices=mac:<realmac>;interface-name:wlan2
 		//macchanger --show wlan0 |grep "Permanent"
 		
-		$exec = "macchanger --show eth0 |grep 'Permanent'";
+		$exec = "macchanger --show $io_in_iface |grep 'Permanent'";
+		//$exec = "macchanger --show eth0 |grep 'Permanent'";
 		//$output = exec_fruitywifi($exec);
 		exec($exec, $output);
 		$mac = explode(" ", $output[0]);
