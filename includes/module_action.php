@@ -97,8 +97,10 @@ function killRegex($regex){
 	$exec = "ps aux|grep -E '$regex' | grep -v grep | awk '{print $2}'";
 	exec($exec,$output);
 	
-	$exec = "kill " . $output[0];
-	exec_fruitywifi($exec);
+	if (count($output) > 0) {
+		$exec = "kill " . $output[0];
+		exec_fruitywifi($exec);
+	}
 	
 }
 
@@ -230,12 +232,16 @@ if($service != "" and $ap_mode == "1") {
 
 		// REMOVE lines from NetworkManager
 		cleanNetworkManager();
-	
+		
+		/*	
 		if (file_exists("/usr/share/fruitywifi/www/modules/karma/includes/hostapd")) {
 			$exec = "$bin_killall hostapd";
 		} else {
 			$exec = "$bin_killall hostapd";			
-		}	
+		}
+		*/
+		
+		$exec = "$bin_killall hostapd";	
 		exec_fruitywifi($exec);
 
 		killRegex("hostapd");
