@@ -92,6 +92,16 @@ function cleanNetworkManager() {
 	exec_fruitywifi($exec);
 }
 
+function killRegex($regex){
+	
+	$exec = "ps aux|grep -E '$regex' | grep -v grep | awk '{print $2}'";
+	exec($exec,$output);
+	
+	$exec = "kill " . $output[0];
+	exec_fruitywifi($exec);
+	
+}
+
 function copyLogsHistory() {
 	
 	global $bin_cp;
@@ -124,12 +134,16 @@ if($service != "" and $ap_mode == "1") {
 		$exec = "$bin_killall hostapd";	
 		exec_fruitywifi($exec);
 
+		killRegex("hostapd");
+		
 		$exec = "$bin_rm /var/run/hostapd-phy0/$io_in_iface";
 		exec_fruitywifi($exec);
 
 		$exec = "$bin_killall dnsmasq";
 		exec_fruitywifi($exec);
 
+		killRegex("dnsmasq");
+		
 		$exec = "$bin_ifconfig $io_in_iface up";
 		exec_fruitywifi($exec);
 		$exec = "$bin_ifconfig $io_in_iface up $io_in_ip netmask 255.255.255.0";
@@ -139,9 +153,8 @@ if($service != "" and $ap_mode == "1") {
 		exec_fruitywifi($exec);
 		
 		$exec = "chattr +i /etc/resolv.conf";
-                exec_fruitywifi($exec);
+        exec_fruitywifi($exec);
 		
-		//$exec = "/etc/init.d/dnsmasq restart";
 		$exec = "$bin_dnsmasq -C /usr/share/fruitywifi/conf/dnsmasq.conf";
 		exec_fruitywifi($exec);
 	
@@ -225,15 +238,19 @@ if($service != "" and $ap_mode == "1") {
 		}	
 		exec_fruitywifi($exec);
 
+		killRegex("hostapd");
+		
 		$exec = "$bin_rm /var/run/hostapd-phy0/$io_in_iface";
 		exec_fruitywifi($exec);
 
 		$exec = "chattr -i /etc/resolv.conf";
-                exec_fruitywifi($exec);
+        exec_fruitywifi($exec);
 
 		$exec = "$bin_killall dnsmasq";
 		exec_fruitywifi($exec);
 
+		killRegex("dnsmasq");
+		
 		$exec = "ip addr flush dev $io_in_iface";
 		exec_fruitywifi($exec);
 		
@@ -259,14 +276,18 @@ if($service != "" and $ap_mode == "2") { // AIRCRACK (airbase-ng)
 		$exec = "$bin_killall airbase-ng";
 		exec_fruitywifi($exec);
 	
+		killRegex("airbase-ng");
+	
 		$exec = "$bin_killall dnsmasq";
 		exec_fruitywifi($exec);
-			
+		
+		killRegex("dnsmasq");
+		
 		$exec = "$bin_echo 'nameserver $io_in_ip\nnameserver 8.8.8.8' > /etc/resolv.conf ";
 		exec_fruitywifi($exec);
 		
 		$exec = "chattr +i /etc/resolv.conf";
-                exec_fruitywifi($exec);
+        exec_fruitywifi($exec);
 		
 		// SETUP NetworkManager
 		setNetworkManager();
@@ -312,12 +333,16 @@ if($service != "" and $ap_mode == "2") { // AIRCRACK (airbase-ng)
 		$exec = "$bin_killall airbase-ng";
 		exec_fruitywifi($exec);
 
+		killRegex("airbase-ng");
+		
 		$exec = "chattr -i /etc/resolv.conf";
-                exec_fruitywifi($exec);
+        exec_fruitywifi($exec);
 
 		$exec = "$bin_killall dnsmasq";
 		exec_fruitywifi($exec);
 
+		killRegex("dnsmasq");
+		
 		$exec = "/usr/bin/sudo /usr/sbin/airmon-ng stop mon0";
 		exec_fruitywifi($exec);
 
@@ -373,12 +398,16 @@ if($service != ""  and $ap_mode == "3") {
 		$exec = "$bin_killall hostapd";
 		exec_fruitywifi($exec);
 
+		killRegex("hostapd");
+		
 		$exec = "$bin_rm /var/run/hostapd-phy0/$io_in_iface";
 		exec_fruitywifi($exec);
 
 		$exec = "$bin_killall dnsmasq";
 		exec_fruitywifi($exec);
 
+		killRegex("dnsmasq");
+		
 		$exec = "$bin_ifconfig $io_in_iface up";
 		exec_fruitywifi($exec);
 		$exec = "$bin_ifconfig $io_in_iface up $io_in_ip netmask 255.255.255.0";
@@ -388,7 +417,7 @@ if($service != ""  and $ap_mode == "3") {
 		exec_fruitywifi($exec);
 		
 		$exec = "chattr +i /etc/resolv.conf";
-                exec_fruitywifi($exec);
+        exec_fruitywifi($exec);
 		
 		$exec = "$bin_dnsmasq -C /usr/share/fruitywifi/conf/dnsmasq.conf";
 		exec_fruitywifi($exec);
@@ -487,15 +516,19 @@ if($service != ""  and $ap_mode == "3") {
 		$exec = "$bin_killall hostapd";	
 		exec_fruitywifi($exec);
 
+		killRegex("hostapd");
+		
 		$exec = "$bin_rm /var/run/hostapd-phy0/$io_in_iface";
 		exec_fruitywifi($exec);
 		
 		$exec = "chattr -i /etc/resolv.conf";
-                exec_fruitywifi($exec);
+        exec_fruitywifi($exec);
 		
 		$exec = "$bin_killall dnsmasq";
 		exec_fruitywifi($exec);
 
+		killRegex("dnsmasq");
+		
 		$exec = "ip addr flush dev $io_in_iface";
 		exec_fruitywifi($exec);
 		
@@ -553,12 +586,16 @@ if($service != ""  and $ap_mode == "4") {
 		$exec = "$bin_killall hostapd";
 		exec_fruitywifi($exec);
 
+		killRegex("hostapd");
+		
 		$exec = "$bin_rm /var/run/hostapd-phy0/$io_in_iface";
 		exec_fruitywifi($exec);
 
 		$exec = "$bin_killall dnsmasq";
 		exec_fruitywifi($exec);
 
+		killRegex("dnsmasq");
+		
 		$exec = "$bin_ifconfig $io_in_iface up";
 		exec_fruitywifi($exec);
 		$exec = "$bin_ifconfig $io_in_iface up $io_in_ip netmask 255.255.255.0";
@@ -568,7 +605,7 @@ if($service != ""  and $ap_mode == "4") {
 		exec_fruitywifi($exec);
 		
 		$exec = "chattr +i /etc/resolv.conf";
-                exec_fruitywifi($exec);
+        exec_fruitywifi($exec);
 		
 		$exec = "$bin_dnsmasq -C /usr/share/fruitywifi/conf/dnsmasq.conf";
 		exec_fruitywifi($exec);
@@ -664,15 +701,22 @@ if($service != ""  and $ap_mode == "4") {
 		// REMOVE lines from NetworkManager
 		cleanNetworkManager();
 
+		$exec = "$bin_killall hostapd";	
+		exec_fruitywifi($exec);
+
+		killRegex("hostapd");
+		
 		$exec = "$bin_rm /var/run/hostapd-phy0/$io_in_iface";
 		exec_fruitywifi($exec);
 
 		$exec = "chattr -i /etc/resolv.conf";
-                exec_fruitywifi($exec);
+        exec_fruitywifi($exec);
 
 		$exec = "$bin_killall dnsmasq";
 		exec_fruitywifi($exec);
 
+		killRegex("dnsmasq");
+		
 		$exec = "ip addr flush dev $io_in_iface";
 		exec_fruitywifi($exec);
 		
