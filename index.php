@@ -179,32 +179,47 @@ if ($logfile != "" and $action == "delete") {
     }
     ?>
     <?
+    $iface_mon0 = exec("/sbin/ifconfig | grep mon0 ");
+    ?>
+    <?
     // PICKER
-    $ismoduleup = exec("ps auxww | grep -iEe 'ap-picker.py' | grep -v -e grep");
-    if ($ismoduleup != "") {
-        echo "&nbsp;&nbsp;Picker <font color='lime'><b>enabled</b></font>.&nbsp; | <a href='includes/module_action.php?worker=picker&action=stop&page=module'><b>stop</b></a>";
-    } else { 
-        echo "&nbsp;&nbsp;Picker <font color='red'><b>disabled</b></font>. | <a href='includes/module_action.php?worker=picker&action=start&page=module'><b>start</b></a>"; 
+    if ($iface_mon0 != "") {
+        $ismoduleup = exec("ps auxww | grep -iEe 'ap-picker.py' | grep -v -e grep");
+        if ($ismoduleup != "") {
+            echo "&nbsp;&nbsp;Picker <font color='lime'><b>enabled</b></font>.&nbsp; | <a href='includes/module_action.php?worker=picker&action=stop&page=module'><b>stop</b></a>";
+        } else { 
+            echo "&nbsp;&nbsp;Picker <font color='red'><b>disabled</b></font>. | <a href='includes/module_action.php?worker=picker&action=start&page=module'><b>start</b></a>"; 
+        }
+    } else {
+        echo "&nbsp;&nbsp;Picker &nbsp;[ <a href='../../../page_config_adv.php'>start</a> mon0 ]";
     }
     ?>
     <br>
     <?
     // SCATTER
-    $ismoduleup = exec("ps auxww | grep -iEe 'ap-scatter.py' | grep -v -e grep");
-    if ($ismoduleup != "") {
-        echo "&nbsp;Scatter <font color='lime'><b>enabled</b></font>.&nbsp; | <a href='includes/module_action.php?worker=scatter&action=stop&page=module'><b>stop</b></a>";
-    } else { 
-        echo "&nbsp;Scatter <font color='red'><b>disabled</b></font>. | <a href='includes/module_action.php?worker=scatter&action=start&page=module'><b>start</b></a>"; 
+    if ($iface_mon0 != "") {
+        $ismoduleup = exec("ps auxww | grep -iEe 'ap-scatter.py' | grep -v -e grep");
+        if ($ismoduleup != "") {
+            echo "&nbsp;Scatter <font color='lime'><b>enabled</b></font>.&nbsp; | <a href='includes/module_action.php?worker=scatter&action=stop&page=module'><b>stop</b></a>";
+        } else { 
+            echo "&nbsp;Scatter <font color='red'><b>disabled</b></font>. | <a href='includes/module_action.php?worker=scatter&action=start&page=module'><b>start</b></a>"; 
+        }
+    } else {
+        echo "&nbsp;&nbsp;Scatter [ <a href='../../../page_config_adv.php'>start</a> mon0 ]";
     }
     ?>
     <br>
     <?
     // POLITE
-    $ismoduleup = exec("ps auxww | grep -iEe 'ap-polite.py' | grep -v -e grep");
-    if ($ismoduleup != "") {
-        echo "&nbsp;&nbsp;Polite <font color='lime'><b>enabled</b></font>.&nbsp; | <a href='includes/module_action.php?worker=polite&action=stop&page=module'><b>stop</b></a>";
-    } else { 
-        echo "&nbsp;&nbsp;Polite <font color='red'><b>disabled</b></font>. | <a href='includes/module_action.php?worker=polite&action=start&page=module'><b>start</b></a>"; 
+    if ($iface_mon0 != "") {
+        $ismoduleup = exec("ps auxww | grep -iEe 'ap-polite.py' | grep -v -e grep");
+        if ($ismoduleup != "") {
+            echo "&nbsp;&nbsp;Polite <font color='lime'><b>enabled</b></font>.&nbsp; | <a href='includes/module_action.php?worker=polite&action=stop&page=module'><b>stop</b></a>";
+        } else { 
+            echo "&nbsp;&nbsp;Polite <font color='red'><b>disabled</b></font>. | <a href='includes/module_action.php?worker=polite&action=start&page=module'><b>start</b></a>"; 
+        }
+    } else {
+        echo "&nbsp;&nbsp;Polite &nbsp;[ <a href='../../../page_config_adv.php'>start</a> mon0 ]";
     }
     ?>
     <br>
