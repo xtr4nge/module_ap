@@ -306,7 +306,6 @@ if($service != "" and $ap_mode == "1") {
 			$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output[4]."/g' /usr/share/fruitywifi/conf/hostapd-secure.conf";
 			exec_fruitywifi($exec);
 			
-			fixConfig("/usr/share/fruitywifi/conf/hostapd-secure.conf");
 			$exec = "/usr/sbin/hostapd -P /var/run/hostapd -B /usr/share/fruitywifi/conf/hostapd-secure.conf";
 		} else {
 			
