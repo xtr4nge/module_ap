@@ -154,6 +154,26 @@ function getMAC($iface) {
 	return $mac[2];
 }
 
+function checkPool() {
+	$filename = '/usr/share/fruitywifi/conf/pool-station.conf';
+	if (!file_exists($filename)) {
+		$exec = "touch $filename";
+		exec_fruitywifi($exec);
+	}
+	
+	$filename = '/usr/share/fruitywifi/conf/pool-ssid.conf';
+	if (!file_exists($filename)) {
+		$exec = "touch $filename";
+		exec_fruitywifi($exec);
+	}
+	
+	$filename = '/usr/share/fruitywifi/conf/ssid.conf';
+	if (!file_exists($filename)) {
+		$exec = "touch $filename";
+		exec_fruitywifi($exec);
+	}
+}
+
 # scatter: spoof-ssid.py
 if ($worker == "scatter") {
 	if ($action == "start") {
@@ -221,6 +241,9 @@ if ($worker == "mana") {
 // HOSTAPD
 if($service != "" and $ap_mode == "1") {
 	if ($action == "start") {
+		
+		// CHECK FOR POOL FILES
+		checkPool();
 		
 		// SETUP NetworkManager
 		setNetworkManager();
@@ -469,27 +492,8 @@ if($service != "" and $ap_mode == "2") { // AIRCRACK (airbase-ng)
 if($service != ""  and $ap_mode == "3") {
 	if ($action == "start") {
 		
-		/*
-		$exec = "macchanger --show $io_in_iface |grep 'Permanent'";
-		exec($exec, $output);
-		$mac = explode(" ", $output[0]);
-		
-		$exec = "grep '^unmanaged-devices' /etc/NetworkManager/NetworkManager.conf";
-		$ispresent = exec($exec);
-		
-		$exec = "$bin_sed -i '/unmanaged/d' /etc/NetworkManager/NetworkManager.conf";
-		exec_fruitywifi($exec);
-		$exec = "$bin_sed -i '/\[keyfile\]/d' /etc/NetworkManager/NetworkManager.conf";
-		exec_fruitywifi($exec);
-		
-		if ($ispresent == "") {
-			$exec = "$bin_echo '[keyfile]' >> /etc/NetworkManager/NetworkManager.conf";
-			exec_fruitywifi($exec);
-
-			$exec = "$bin_echo 'unmanaged-devices=mac:".$mac[2].";interface-name:".$io_in_iface."' >> /etc/NetworkManager/NetworkManager.conf";
-			exec_fruitywifi($exec);
-		}
-		*/
+		// CHECK FOR POOL FILES
+		checkPool();
 		
 		// SETUP NetworkManager
 		setNetworkManager();
@@ -668,32 +672,8 @@ if($service != ""  and $ap_mode == "3") {
 if($service != ""  and $ap_mode == "4") {
 	if ($action == "start") {
 		
-		/*
-		//unmanaged-devices=mac:<realmac>;interface-name:wlan2
-		//macchanger --show wlan0 |grep "Permanent"
-		
-		$exec = "macchanger --show eth0 |grep 'Permanent'";
-		//$exec = "macchanger --show $io_in_iface |grep 'Permanent'";
-		//$output = exec_fruitywifi($exec);
-		exec($exec, $output);
-		$mac = explode(" ", $output[0]);
-		
-		$exec = "grep '^unmanaged-devices' /etc/NetworkManager/NetworkManager.conf";
-		$ispresent = exec($exec);
-		
-		$exec = "$bin_sed -i '/unmanaged/d' /etc/NetworkManager/NetworkManager.conf";
-		exec_fruitywifi($exec);
-		$exec = "$bin_sed -i '/[keyfile]/d' /etc/NetworkManager/NetworkManager.conf";
-		exec_fruitywifi($exec);
-		
-		if ($ispresent == "") {
-			$exec = "$bin_echo '[keyfile]' >> /etc/NetworkManager/NetworkManager.conf";
-			exec_fruitywifi($exec);
-
-			$exec = "$bin_echo 'unmanaged-devices=mac:".$mac[2].";interface-name:".$io_in_iface."' >> /etc/NetworkManager/NetworkManager.conf";
-			exec_fruitywifi($exec);
-		}
-		*/
+		// CHECK FOR POOL FILES
+		checkPool();
 		
 		// SETUP NetworkManager
 		setNetworkManager();
