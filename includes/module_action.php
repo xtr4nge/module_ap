@@ -1,6 +1,6 @@
 <? 
 /*
-    Copyright (C) 2013-2015 xtr4nge [_AT_] gmail.com
+    Copyright (C) 2013-2016 xtr4nge [_AT_] gmail.com
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,12 +28,14 @@ if ($regex == 1) {
     regex_standard($_GET["action"], "../msg.php", $regex_extra);
     regex_standard($_GET["page"], "../msg.php", $regex_extra);
     regex_standard($_GET["install"], "../msg.php", $regex_extra);
+	regex_standard($_GET["worker"], "../msg.php", $regex_extra);
 }
 
 $service = $_GET['service'];
 $action = $_GET['action'];
 $page = $_GET['page'];
 $install = $_GET['install'];
+$worker = $_GET['worker'];
 
 function flushIptables() {	
 	global $bin_iptables;
@@ -121,6 +123,101 @@ function copyLogsHistory() {
 	}
 }
 
+function poolStation($bin_hostapd_cli, $mode) {
+	$data = open_file("/usr/share/fruitywifi/conf/pool-station.conf");
+	$out = explode("\n", $data);
+	
+	for ($i=0; $i < count($out); $i++) {
+		if ($out[$i] != "") {
+			$exec = "$bin_hostapd_cli -p /var/run/hostapd $mode " . trim($out[$i]);
+			exec_fruitywifi($exec);
+		}
+	}
+}
+
+function poolSSID($bin_hostapd_cli, $mode) {
+	$data = open_file("/usr/share/fruitywifi/conf/pool-ssid.conf");
+	$out = explode("\n", $data);
+	
+	for ($i=0; $i < count($out); $i++) {
+		if ($out[$i] != "") {
+			$exec = "$bin_hostapd_cli -p /var/run/hostapd $mode " . trim($out[$i]);
+			exec_fruitywifi($exec);
+		}
+	}
+}
+
+function getMAC($iface) {
+	$exec = "macchanger --show $iface |grep 'Permanent'";
+	exec($exec, $output);
+	$mac = explode(" ", $output[0]);
+	return $mac[2];
+}
+
+# scatter: spoof-ssid.py
+if ($worker == "scatter") {
+	if ($action == "start") {
+		$opt = "";
+		
+		if ($mod_filter_scatter_bssid == "1") {
+			$opt .= " -b $mod_scatter_bssid";
+		} else {
+			$opt .= " -b " . getMAC($io_in_iface);
+		}
+		
+		if ($mod_filter_scatter_station == "1") $opt .= " -s $mod_scatter_station";
+		
+		//$exec = "python ap-scatter.py -i mon0 -b $mod_scatter_bssid > /dev/null &";
+		$exec = "python ap-scatter.py -i mon0 $opt -e $mod_filter_scatter_ssid > /dev/null &";
+		exec_fruitywifi($exec);
+	} else if ($action == "stop") {
+		killRegex("ap-scatter.py");
+		killRegex("ap-scatter.py");
+	}
+}
+
+# picker: scan-ssid.py
+if ($worker == "picker") {
+	if ($action == "start") {
+		$exec = "python ap-picker.py -i mon0 > /dev/null &";
+		exec_fruitywifi($exec);
+	} else if ($action == "stop") {
+		killRegex("ap-picker.py");
+		killRegex("ap-picker.py");
+	}
+}
+
+# polite: spoof-response.py
+if ($worker == "polite") {
+	if ($action == "start") {
+		$exec = "python ap-polite.py -i mon0 -s $mod_filter_polite_station -e $mod_filter_polite_ssid -b $mod_scatter_bssid  > /dev/null &";
+		exec_fruitywifi($exec);
+	} else if ($action == "stop") {
+		killRegex("ap-polite.py");
+		killRegex("ap-polite.py");
+	}
+}
+
+if ($worker == "karma") {
+	if ($action == "start") {
+		$exec = "/usr/share/fruitywifi/www/modules/karma/includes/hostapd_cli -p /var/run/hostapd karma_enable";
+		exec_fruitywifi($exec);
+	} else if ($action == "stop") {
+		$exec = "/usr/share/fruitywifi/www/modules/karma/includes/hostapd_cli -p /var/run/hostapd karma_disable";
+		exec_fruitywifi($exec);
+	}
+}
+
+if ($worker == "mana") {
+	if ($action == "start") {
+		$exec = "/usr/share/fruitywifi/www/modules/mana/includes/hostapd_cli -p /var/run/hostapd karma_enable";
+		exec_fruitywifi($exec);
+	} else if ($action == "stop") {
+		$exec = "/usr/share/fruitywifi/www/modules/mana/includes/hostapd_cli -p /var/run/hostapd karma_disable";
+		exec_fruitywifi($exec);
+	}
+}
+
 // HOSTAPD
 if($service != "" and $ap_mode == "1") {
 	if ($action == "start") {
@@ -138,7 +235,7 @@ if($service != "" and $ap_mode == "1") {
 
 		killRegex("hostapd");
 		
-		$exec = "$bin_rm /var/run/hostapd-phy0/$io_in_iface";
+		$exec = "$bin_rm /var/run/hostapd/$io_in_iface";
 		exec_fruitywifi($exec);
 
 		$exec = "$bin_killall dnsmasq";
@@ -186,7 +283,8 @@ if($service != "" and $ap_mode == "1") {
 			$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output[4]."/g' /usr/share/fruitywifi/conf/hostapd-secure.conf";
 			exec_fruitywifi($exec);
 			
-			$exec = "/usr/sbin/hostapd -P /var/run/hostapd-phy0 -B /usr/share/fruitywifi/conf/hostapd-secure.conf";
+			fixConfig("/usr/share/fruitywifi/conf/hostapd-secure.conf");
+			$exec = "/usr/sbin/hostapd -P /var/run/hostapd -B /usr/share/fruitywifi/conf/hostapd-secure.conf";
 		} else {
 			
 			//REPLACE SSID
@@ -212,7 +310,7 @@ if($service != "" and $ap_mode == "1") {
 			$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output[4]."/g' /usr/share/fruitywifi/conf/hostapd.conf";
 			exec_fruitywifi($exec);
 			
-			$exec = "/usr/sbin/hostapd -P /var/run/hostapd-phy0 -B /usr/share/fruitywifi/conf/hostapd.conf";
+			$exec = "/usr/sbin/hostapd -P /var/run/hostapd -B /usr/share/fruitywifi/conf/hostapd.conf";
 		}
 		exec_fruitywifi($exec);
 
@@ -246,7 +344,7 @@ if($service != "" and $ap_mode == "1") {
 
 		killRegex("hostapd");
 		
-		$exec = "$bin_rm /var/run/hostapd-phy0/$io_in_iface";
+		$exec = "$bin_rm /var/run/hostapd/$io_in_iface";
 		exec_fruitywifi($exec);
 
 		$exec = "chattr -i /etc/resolv.conf";
@@ -406,7 +504,7 @@ if($service != ""  and $ap_mode == "3") {
 
 		killRegex("hostapd");
 		
-		$exec = "$bin_rm /var/run/hostapd-phy0/$io_in_iface";
+		$exec = "$bin_rm /var/run/hostapd/$io_in_iface";
 		exec_fruitywifi($exec);
 
 		$exec = "$bin_killall dnsmasq";
@@ -457,9 +555,9 @@ if($service != ""  and $ap_mode == "3") {
 				$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output[4]."/g' $mod_path/includes/conf/hostapd-secure.conf";
 				exec_fruitywifi($exec);
 				
-				$exec = "$bin_hostapd $mod_path/includes/conf/hostapd-secure.conf >> $mod_logs &";
+				$exec = "$bin_hostapd $mod_path/includes/conf/hostapd-secure.conf -f $mod_logs -B"; // >> $mod_log &
 			} else {
-				$exec = "/usr/sbin/hostapd -P /var/run/hostapd-phy0 -B /usr/share/fruitywifi/conf/hostapd-secure.conf";
+				$exec = "/usr/sbin/hostapd -P /var/run/hostapd -B /usr/share/fruitywifi/conf/hostapd-secure.conf";
 			}
 			
 		} else {
@@ -486,14 +584,14 @@ if($service != ""  and $ap_mode == "3") {
 				$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output[4]."/g' $mod_path/includes/conf/hostapd.conf";
 				exec_fruitywifi($exec);
 				
-				$exec = "$bin_hostapd $mod_path/includes/conf/hostapd.conf >> $mod_logs &";
+				$exec = "$bin_hostapd $mod_path/includes/conf/hostapd.conf -t -d -f $mod_logs -B";
 			} else {
-				$exec = "/usr/sbin/hostapd -P /var/run/hostapd-phy0 -B /usr/share/fruitywifi/conf/hostapd.conf";
+				$exec = "/usr/sbin/hostapd -P /var/run/hostapd -B /usr/share/fruitywifi/conf/hostapd.conf";
 			}
 			
 		}
 		exec_fruitywifi($exec);
-
+		
 		// IPTABLES	FLUSH	
 		flushIptables();
 		
@@ -506,6 +604,22 @@ if($service != ""  and $ap_mode == "3") {
 		$exec = "$bin_echo '' > /usr/share/fruitywifi/logs/dhcp.leases";
 		exec_fruitywifi($exec);
 
+		// FILTER MACADDRESS STATIONS [BLACK|WHITE]
+		if ($mod_filter_karma_station == "blacklist") {
+			// SET KARMA_BLACK
+			$exec = "$bin_hostapd_cli -p /var/run/hostapd karma_black";
+			exec_fruitywifi($exec);
+			
+			poolStation($bin_hostapd_cli, "karma_add_black_mac");
+			
+		} else if ($mod_filter_karma_station == "whitelist") {
+			// SET KARMA_WHITE
+			$exec = "$bin_hostapd_cli -p /var/run/hostapd karma_white";
+			exec_fruitywifi($exec);
+			
+			poolStation($bin_hostapd_cli, "karma_add_white_mac");
+		}
+		
 	} else if($action == "stop") {
 
 		/*
@@ -524,7 +638,7 @@ if($service != ""  and $ap_mode == "3") {
 
 		killRegex("hostapd");
 		
-		$exec = "$bin_rm /var/run/hostapd-phy0/$io_in_iface";
+		$exec = "$bin_rm /var/run/hostapd/$io_in_iface";
 		exec_fruitywifi($exec);
 		
 		$exec = "chattr -i /etc/resolv.conf";
@@ -594,7 +708,7 @@ if($service != ""  and $ap_mode == "4") {
 
 		killRegex("hostapd");
 		
-		$exec = "$bin_rm /var/run/hostapd-phy0/$io_in_iface";
+		$exec = "$bin_rm /var/run/hostapd/$io_in_iface";
 		exec_fruitywifi($exec);
 
 		$exec = "$bin_killall dnsmasq";
@@ -645,9 +759,9 @@ if($service != ""  and $ap_mode == "4") {
 				$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output[4]."/g' $mod_path/includes/conf/hostapd-secure.conf";
 				exec_fruitywifi($exec);
 				
-				$exec = "$bin_hostapd $mod_path/includes/conf/hostapd-secure.conf >> $mod_logs &";
+				$exec = "$bin_hostapd $mod_path/includes/conf/hostapd-secure.conf -d -f $mod_logs -B";
 			} else {
-				$exec = "/usr/sbin/hostapd -P /var/run/hostapd-phy0 -B /usr/share/fruitywifi/conf/hostapd-secure.conf";
+				$exec = "/usr/sbin/hostapd -P /var/run/hostapd -B /usr/share/fruitywifi/conf/hostapd-secure.conf";
 			}
 			
 		} else {
@@ -674,14 +788,14 @@ if($service != ""  and $ap_mode == "4") {
 				$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output[4]."/g' $mod_path/includes/conf/hostapd.conf";
 				exec_fruitywifi($exec);
 				
-				$exec = "$bin_hostapd $mod_path/includes/conf/hostapd.conf >> $mod_logs &";
+				$exec = "$bin_hostapd $mod_path/includes/conf/hostapd.conf -dd -f $mod_logs -B";
 			} else {
-				$exec = "/usr/sbin/hostapd -P /var/run/hostapd-phy0 -B /usr/share/fruitywifi/conf/hostapd.conf";
+				$exec = "/usr/sbin/hostapd -P /var/run/hostapd -B /usr/share/fruitywifi/conf/hostapd.conf";
 			}
 			
 		}
 		exec_fruitywifi($exec);
-
+		
 		// IPTABLES	FLUSH	
 		flushIptables();
 		
@@ -694,6 +808,39 @@ if($service != ""  and $ap_mode == "4") {
 		$exec = "$bin_echo '' > /usr/share/fruitywifi/logs/dhcp.leases";
 		exec_fruitywifi($exec);
 
+		// FILTER MACADDRESS STATIONS [BLACK|WHITE]
+		if ($mod_filter_karma_station == "blacklist") {
+			// SET KARMA_BLACK
+			$exec = "$bin_hostapd_cli -p /var/run/hostapd karma_black";
+			exec_fruitywifi($exec);
+			
+			poolStation($bin_hostapd_cli, "karma_add_black_mac");
+			
+		} else if ($mod_filter_karma_station == "whitelist") {
+			// SET KARMA_WHITE
+			$exec = "$bin_hostapd_cli -p /var/run/hostapd karma_white";
+			exec_fruitywifi($exec);
+			
+			poolStation($bin_hostapd_cli, "karma_add_white_mac");
+		}
+		
+		// FILTER SSID [BLACK|WHITE] ? ** CHECK BLACK/WHITE MODE [TODO]
+		if ($mod_filter_karma_ssid == "blacklist") {
+			// SET KARMA_BLACK
+			$exec = "$bin_hostapd_cli -p /var/run/hostapd karma_black";
+			exec_fruitywifi($exec);
+			
+			poolSSID($bin_hostapd_cli, "karma_add_ssid");
+			
+		} else if ($mod_filter_karma_ssid == "whitelist") {
+			// SET KARMA_WHITE
+			$exec = "$bin_hostapd_cli -p /var/run/hostapd karma_white";
+			exec_fruitywifi($exec);
+			
+			poolSSID($bin_hostapd_cli, "karma_add_ssid");
+		}
+		
+		
 	} else if($action == "stop") {
 
 		/*
@@ -712,7 +859,7 @@ if($service != ""  and $ap_mode == "4") {
 
 		killRegex("hostapd");
 		
-		$exec = "$bin_rm /var/run/hostapd-phy0/$io_in_iface";
+		$exec = "$bin_rm /var/run/hostapd/$io_in_iface";
 		exec_fruitywifi($exec);
 
 		$exec = "chattr -i /etc/resolv.conf";
@@ -746,14 +893,14 @@ if ($install == "install_$mod_name") {
     $exec = "$bin_sudo ./install.sh > $log_path/install.txt &";
     exec_fruitywifi($exec);
 
-    header('Location: ../../install.php?module=ap');
+    header("Location: ../../install.php?module=ap");
     exit;
 }
 
 if ($page == "status") {
-    header('Location: ../../../action.php');
+    header("Location: ../../../action.php");
 } else {
-    header('Location: ../../action.php?page=ap');
+    header("Location: ../../action.php?page=ap");
 }
 
 ?>

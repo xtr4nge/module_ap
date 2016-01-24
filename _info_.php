@@ -1,6 +1,6 @@
 <?
 $mod_name="ap";
-$mod_version="1.0";
+$mod_version="1.1";
 $mod_path="/usr/share/fruitywifi/www/modules/$mod_name";
 //$mod_logs="$log_path/$mod_name.log";
 $mod_logs="$log_path/dnsmasq.log";
@@ -8,6 +8,25 @@ $mod_logs_history="$mod_path/includes/logs/";
 $mod_panel="show";
 $mod_type="service";
 $mod_alias="[AP]";
+$mod_filter_station="0";
+$mod_filter_station_mode="1";
+$mod_filter_ssid="0";
+$mod_filter_ssid_mode="1";
+
+# KARMA
+$mod_filter_karma_station="none";
+$mod_filter_karma_ssid="none";
+
+# POLITE
+$mod_filter_polite_station="none";
+$mod_filter_polite_ssid="none";
+
+# SCATTER
+$mod_filter_scatter_ssid="none";
+$mod_filter_scatter_bssid="0";
+$mod_filter_scatter_station="0";
+$mod_scatter_bssid="00:00:00:00:00:ff";
+$mod_scatter_station="00:00:00:00:00:01";
 
 # EXEC
 $bin_danger = "/usr/share/fruitywifi/bin/danger";
