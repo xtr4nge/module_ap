@@ -1,6 +1,6 @@
 <?
 $mod_name="ap";
-$mod_version="1.1";
+$mod_version="1.2";
 $mod_path="/usr/share/fruitywifi/www/modules/$mod_name";
 //$mod_logs="$log_path/$mod_name.log";
 $mod_logs="$log_path/dnsmasq.log";

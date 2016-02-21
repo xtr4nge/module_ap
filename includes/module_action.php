@@ -297,13 +297,10 @@ if($service != "" and $ap_mode == "1") {
 			
 			//EXTRACT MACADDRESS
 			unset($output);
-			$exec = "$bin_ifconfig -a $io_in_iface |grep HWaddr";
-			$output = exec_fruitywifi($exec);
-			$output = preg_replace('/\s+/', ' ',$output[0]);
-			$output = explode(" ",$output);
+			$output = getIfaceMAC($io_in_iface);
 			
 			//REPLACE MAC
-			$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output[4]."/g' /usr/share/fruitywifi/conf/hostapd-secure.conf";
+			$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output."/g' /usr/share/fruitywifi/conf/hostapd-secure.conf";
 			exec_fruitywifi($exec);
 			
 			$exec = "/usr/sbin/hostapd -P /var/run/hostapd -B /usr/share/fruitywifi/conf/hostapd-secure.conf";
@@ -323,13 +320,10 @@ if($service != "" and $ap_mode == "1") {
 			
 			//EXTRACT MACADDRESS
 			unset($output);
-			$exec = "$bin_ifconfig -a $io_in_iface |grep HWaddr";
-			$output = exec_fruitywifi($exec);
-			$output = preg_replace('/\s+/', ' ',$output[0]);
-			$output = explode(" ",$output);
+			$output = getIfaceMAC($io_in_iface);
 			
 			//REPLACE BSSID
-			$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output[4]."/g' /usr/share/fruitywifi/conf/hostapd.conf";
+			$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output."/g' /usr/share/fruitywifi/conf/hostapd.conf";
 			exec_fruitywifi($exec);
 			
 			$exec = "/usr/sbin/hostapd -P /var/run/hostapd -B /usr/share/fruitywifi/conf/hostapd.conf";
@@ -549,13 +543,10 @@ if($service != ""  and $ap_mode == "3") {
 				
 				//EXTRACT MACADDRESS
 				unset($output);
-				$exec = "$bin_ifconfig -a $io_in_iface |grep HWaddr";
-				$output = exec_fruitywifi($exec);
-				$output = preg_replace('/\s+/', ' ',$output[0]);
-				$output = explode(" ",$output);
+				$output = getIfaceMAC($io_in_iface);
 				
 				//REPLACE MAC
-				$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output[4]."/g' $mod_path/includes/conf/hostapd-secure.conf";
+				$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output."/g' $mod_path/includes/conf/hostapd-secure.conf";
 				exec_fruitywifi($exec);
 				
 				$exec = "$bin_hostapd $mod_path/includes/conf/hostapd-secure.conf -f $mod_logs -B"; // >> $mod_log &
@@ -578,13 +569,10 @@ if($service != ""  and $ap_mode == "3") {
 				
 				//EXTRACT MACADDRESS
 				unset($output);
-				$exec = "$bin_ifconfig -a $io_in_iface |grep HWaddr";
-				$output = exec_fruitywifi($exec);
-				$output = preg_replace('/\s+/', ' ',$output[0]);
-				$output = explode(" ",$output);
+				$output = getIfaceMAC($io_in_iface);
 				
 				//REPLACE MAC
-				$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output[4]."/g' $mod_path/includes/conf/hostapd.conf";
+				$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output."/g' $mod_path/includes/conf/hostapd.conf";
 				exec_fruitywifi($exec);
 				
 				$exec = "$bin_hostapd $mod_path/includes/conf/hostapd.conf -t -d -f $mod_logs -B";
@@ -729,13 +717,10 @@ if($service != ""  and $ap_mode == "4") {
 				
 				//EXTRACT MACADDRESS
 				unset($output);
-				$exec = "$bin_ifconfig -a $io_in_iface |grep HWaddr";
-				$output = exec_fruitywifi($exec);
-				$output = preg_replace('/\s+/', ' ',$output[0]);
-				$output = explode(" ",$output);
+				$output = getIfaceMAC($io_in_iface);
 				
 				//REPLACE MAC
-				$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output[4]."/g' $mod_path/includes/conf/hostapd-secure.conf";
+				$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output."/g' $mod_path/includes/conf/hostapd-secure.conf";
 				exec_fruitywifi($exec);
 				
 				$exec = "$bin_hostapd $mod_path/includes/conf/hostapd-secure.conf -d -f $mod_logs -B";
@@ -758,13 +743,10 @@ if($service != ""  and $ap_mode == "4") {
 				
 				//EXTRACT MACADDRESS
 				unset($output);
-				$exec = "$bin_ifconfig -a $io_in_iface |grep HWaddr";
-				$output = exec_fruitywifi($exec);
-				$output = preg_replace('/\s+/', ' ',$output[0]);
-				$output = explode(" ",$output);
+				$output = getIfaceMAC($io_in_iface);
 				
 				//REPLACE MAC
-				$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output[4]."/g' $mod_path/includes/conf/hostapd.conf";
+				$exec = "$bin_sed -i 's/^bssid=.*/bssid=".$output."/g' $mod_path/includes/conf/hostapd.conf";
 				exec_fruitywifi($exec);
 				
 				$exec = "$bin_hostapd $mod_path/includes/conf/hostapd.conf -dd -f $mod_logs -B";
