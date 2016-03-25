@@ -333,6 +333,13 @@ Loading, please wait...
 
         <div id="tab-config" class="history">
             
+            <h4>
+                <input id="mod_nethunter" type="checkbox" name="my-checkbox" <? if ($mod_nethunter == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_nethunter')" >
+                NetHunter
+            </h4>
+            
+            <hr>
+            
             <h4>Karma | Mana</h4>
             Filter Station (Karma and Mana only) 
             <br>
@@ -427,7 +434,7 @@ Loading, please wait...
                 <label class="btn btn-default <? if ($mod_filter_polite_ssid == "blacklist") echo "active" ?>">
                   <input type="radio" name="mod_filter_polite_ssid" id="blacklist" autocomplete="off"> Blacklist
                 </label>
-            </div> 
+            </div>
             
             <script>
             $('.btn-default').on('click', function(){

@@ -1,6 +1,6 @@
 <?
 $mod_name="ap";
-$mod_version="1.2";
+$mod_version="1.3";
 $mod_path="/usr/share/fruitywifi/www/modules/$mod_name";
 //$mod_logs="$log_path/$mod_name.log";
 $mod_logs="$log_path/dnsmasq.log";
@@ -12,6 +12,7 @@ $mod_filter_station="0";
 $mod_filter_station_mode="1";
 $mod_filter_ssid="0";
 $mod_filter_ssid_mode="1";
+$mod_nethunter="0";
 
 # KARMA
 $mod_filter_karma_station="none";

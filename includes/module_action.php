@@ -55,6 +55,128 @@ function flushIptables() {
 	echo $exec;
 }
 
+function flushIptablesNetHunter() {
+	global $bin_iptables;
+	
+	$exec = "$bin_iptables -F";
+	exec_fruitywifi($exec);
+	$exec = "$bin_iptables -F -t nat";
+	exec_fruitywifi($exec);
+}
+
+function setInIfaceDown() {
+	global $io_in_iface;
+	global $bin_ifconfig;
+	
+	/*
+	$exec = "$bin_ifconfig $io_in_iface down";
+	exec_fruitywifi($exec);
+	$exec = "$bin_ifconfig $io_in_iface 0.0.0.0";
+	exec_fruitywifi($exec);
+	*/
+	
+	$exec = "ip addr flush dev $io_in_iface";
+	exec_fruitywifi($exec);
+	
+	$exec = "$bin_ifconfig $io_in_iface down";
+	exec_fruitywifi($exec);
+	
+	$exec = "$bin_ifconfig $io_in_iface 0.0.0.0";
+	exec_fruitywifi($exec);
+}
+
+function setInIfaceUP() {
+	global $io_in_iface;
+	global $io_out_iface;
+	global $io_in_ip;
+	
+	/*
+	$exec = "$bin_ifconfig $io_in_iface up";
+	exec_fruitywifi($exec);
+	$exec = "$bin_ifconfig $io_in_iface up $io_in_ip netmask 255.255.255.0";
+	exec_fruitywifi($exec);
+	*/
+	
+	$exec = "rfkill unblock wlan";
+	exec_fruitywifi($exec);
+	
+	$exec = "ip addr flush dev $io_in_iface";
+	exec_fruitywifi($exec);
+	
+	$exec = "ip addr add $io_in_ip/24 dev $io_in_iface";
+	exec_fruitywifi($exec);
+	
+	$exec = "ip link set $io_in_iface up";
+	exec_fruitywifi($exec);
+	
+	$exec = "ip route add default via $io_in_ip dev $io_in_iface";
+	exec_fruitywifi($exec);
+}
+
+function setIptablesSave() {
+	global $bin_iptables;
+	
+	$exec = "$bin_iptables -F bw_INPUT";
+	exec_fruitywifi($exec);
+	$exec = "$bin_iptables -F bw_OUTPUT";
+	exec_fruitywifi($exec);
+	
+	$exec = "iptables-save > backup-rules.txt";
+	exec_fruitywifi($exec);
+}
+
+function setIptablesRestore() {
+	global $bin_iptables;
+	
+	$exec = "iptables-restore < backup-rules.txt";
+	exec_fruitywifi($exec);
+}
+
+function setForwarding() {
+	global $io_in_iface;
+	global $io_out_iface;
+	global $bin_iptables;
+	
+	/*
+	$exec = "$bin_echo 1 > /proc/sys/net/ipv4/ip_forward";
+	exec_fruitywifi($exec);
+	$exec = "$bin_iptables -t nat -A POSTROUTING -o $io_out_iface -j MASQUERADE";
+	exec_fruitywifi($exec);
+	*/
+	
+	$exec = "$bin_iptables -t nat -A POSTROUTING -o $io_out_iface -j MASQUERADE";
+	exec_fruitywifi($exec);
+	$exec = "$bin_iptables -A FORWARD -i $io_in_iface -o $io_out_iface -j ACCEPT";
+	exec_fruitywifi($exec);
+	
+	$exec = "echo '1' > /proc/sys/net/ipv4/ip_forward";
+	exec_fruitywifi($exec);
+}
+
+function setNetHunter() {
+	global $io_in_iface;
+	global $io_out_iface;
+	global $io_in_ip;
+	
+	$exec = "ip rule list | awk -F'lookup' '{print \\$2}'";
+	$out_table = exec_fruitywifi($exec);
+	
+	foreach ($out_table as $table) {
+		$exec = "ip route show table $table|grep default|grep $io_out_iface";
+		$out_rule = exec_fruitywifi($exec);
+		
+		foreach ($out_rule as $rule) {
+			$flag = True;
+			break;
+		}
+		if ($flag) {
+			$exec = "ip route add ".substr($io_in_ip, 0, -2).".0/24 dev $io_in_iface scope link table $table";
+			exec_fruitywifi($exec);
+			break;
+		}
+	}
+}
+
 function setNetworkManager() {
 	
 	global $io_in_iface;
@@ -242,16 +364,17 @@ if ($worker == "mana") {
 if($service != "" and $ap_mode == "1") {
 	if ($action == "start") {
 		
+		// SAVE IPTABLES
+		setIptablesSave();
+		
 		// CHECK FOR POOL FILES
 		checkPool();
 		
 		// SETUP NetworkManager
 		setNetworkManager();
 		
-		$exec = "$bin_ifconfig $io_in_iface down";
-		exec_fruitywifi($exec);
-		$exec = "$bin_ifconfig $io_in_iface 0.0.0.0";
-		exec_fruitywifi($exec);
+		// IN IFACE DOWN
+		setInIfaceDown();
 		
 		$exec = "$bin_killall hostapd";	
 		exec_fruitywifi($exec);
@@ -266,10 +389,8 @@ if($service != "" and $ap_mode == "1") {
 
 		killRegex("dnsmasq");
 		
-		$exec = "$bin_ifconfig $io_in_iface up";
-		exec_fruitywifi($exec);
-		$exec = "$bin_ifconfig $io_in_iface up $io_in_ip netmask 255.255.255.0";
-		exec_fruitywifi($exec);
+		// IN IFACE UP
+		setInIfaceUp();
 		
 		$exec = "$bin_echo 'nameserver $io_in_ip\nnameserver 8.8.8.8' > /etc/resolv.conf ";
 		exec_fruitywifi($exec);
@@ -330,13 +451,16 @@ if($service != "" and $ap_mode == "1") {
 		}
 		exec_fruitywifi($exec);
 
-		// IPTABLES	FLUSH	
-		flushIptables();
+		// IPTABLES	FLUSH
+		if ($mod_nethunter == "1") {
+			flushIptablesNetHunter();
+			setNetHunter();
+		} else {
+			flushIptables();
+		}
 		
-		$exec = "$bin_echo 1 > /proc/sys/net/ipv4/ip_forward";
-		exec_fruitywifi($exec);
-		$exec = "$bin_iptables -t nat -A POSTROUTING -o $io_out_iface -j MASQUERADE";
-		exec_fruitywifi($exec);
+		// SET FORWARDING
+		setForwarding();
 		
 		// CLEAN DHCP log
 		$exec = "$bin_echo '' > /usr/share/fruitywifi/logs/dhcp.leases";
@@ -346,14 +470,6 @@ if($service != "" and $ap_mode == "1") {
 
 		// REMOVE lines from NetworkManager
 		cleanNetworkManager();
-		
-		/*	
-		if (file_exists("/usr/share/fruitywifi/www/modules/karma/includes/hostapd")) {
-			$exec = "$bin_killall hostapd";
-		} else {
-			$exec = "$bin_killall hostapd";			
-		}
-		*/
 		
 		$exec = "$bin_killall hostapd";	
 		exec_fruitywifi($exec);
@@ -371,14 +487,16 @@ if($service != "" and $ap_mode == "1") {
 
 		killRegex("dnsmasq");
 		
-		$exec = "ip addr flush dev $io_in_iface";
-		exec_fruitywifi($exec);
+		// IN IFACE DOWN
+		setInIfaceDown();
 		
-		$exec = "$bin_ifconfig $io_in_iface down";
-		exec_fruitywifi($exec);
-		
-		// IPTABLES	FLUSH	
-		flushIptables();
+		// IPTABLES	FLUSH
+		if ($mod_nethunter == "1") {
+			flushIptablesNetHunter();
+			setIptablesRestore();
+		} else {
+			flushIptables();
+		}
 		
 		// LOGS COPY
 		copyLogsHistory();
@@ -491,10 +609,8 @@ if($service != ""  and $ap_mode == "3") {
 		// SETUP NetworkManager
 		setNetworkManager();
 		
-		$exec = "$bin_ifconfig $io_in_iface down";
-		exec_fruitywifi($exec);
-		$exec = "$bin_ifconfig $io_in_iface 0.0.0.0";
-		exec_fruitywifi($exec);
+		// IN IFACE DOWN
+		setInIfaceDown();
 		
 		$exec = "$bin_killall hostapd";
 		exec_fruitywifi($exec);
@@ -509,10 +625,8 @@ if($service != ""  and $ap_mode == "3") {
 
 		killRegex("dnsmasq");
 		
-		$exec = "$bin_ifconfig $io_in_iface up";
-		exec_fruitywifi($exec);
-		$exec = "$bin_ifconfig $io_in_iface up $io_in_ip netmask 255.255.255.0";
-		exec_fruitywifi($exec);
+		// IN IFACE UP
+		setInIfaceUp();
 		
 		$exec = "$bin_echo 'nameserver $io_in_ip\nnameserver 8.8.8.8' > /etc/resolv.conf ";
 		exec_fruitywifi($exec);
@@ -583,13 +697,16 @@ if($service != ""  and $ap_mode == "3") {
 		}
 		exec_fruitywifi($exec);
 		
-		// IPTABLES	FLUSH	
-		flushIptables();
+		// IPTABLES	FLUSH
+		if ($mod_nethunter == "1") {
+			flushIptablesNetHunter();
+			setNetHunter();
+		} else {
+			flushIptables();
+		}
 		
-		$exec = "$bin_echo 1 > /proc/sys/net/ipv4/ip_forward";
-		exec_fruitywifi($exec);
-		$exec = "$bin_iptables -t nat -A POSTROUTING -o $io_out_iface -j MASQUERADE";
-		exec_fruitywifi($exec);
+		// SET FORWARDING
+		setForwarding();
 		
 		// CLEAN DHCP log
 		$exec = "$bin_echo '' > /usr/share/fruitywifi/logs/dhcp.leases";
@@ -640,14 +757,16 @@ if($service != ""  and $ap_mode == "3") {
 
 		killRegex("dnsmasq");
 		
-		$exec = "ip addr flush dev $io_in_iface";
-		exec_fruitywifi($exec);
-		
-		$exec = "$bin_ifconfig $io_in_iface down";
-		exec_fruitywifi($exec);
+		// IN IFACE DOWN
+		setInIfaceDown();
 
-		// IPTABLES	FLUSH	
-		flushIptables();
+		// IPTABLES	FLUSH
+		if ($mod_nethunter == "1") {
+			flushIptablesNetHunter();
+			setIptablesRestore();
+		} else {
+			flushIptables();
+		}
 		
 		// LOGS COPY
 		copyLogsHistory();
@@ -665,10 +784,8 @@ if($service != ""  and $ap_mode == "4") {
 		// SETUP NetworkManager
 		setNetworkManager();
 		
-		$exec = "$bin_ifconfig $io_in_iface down";
-		exec_fruitywifi($exec);
-		$exec = "$bin_ifconfig $io_in_iface 0.0.0.0";
-		exec_fruitywifi($exec);
+		// IN IFACE DOWN
+		setInIfaceDown();
 		
 		$exec = "$bin_killall hostapd";
 		exec_fruitywifi($exec);
@@ -683,10 +800,8 @@ if($service != ""  and $ap_mode == "4") {
 
 		killRegex("dnsmasq");
 		
-		$exec = "$bin_ifconfig $io_in_iface up";
-		exec_fruitywifi($exec);
-		$exec = "$bin_ifconfig $io_in_iface up $io_in_ip netmask 255.255.255.0";
-		exec_fruitywifi($exec);
+		// IN IFACE UP
+		setInIfaceUp();
 		
 		$exec = "$bin_echo 'nameserver $io_in_ip\nnameserver 8.8.8.8' > /etc/resolv.conf ";
 		exec_fruitywifi($exec);
@@ -757,13 +872,16 @@ if($service != ""  and $ap_mode == "4") {
 		}
 		exec_fruitywifi($exec);
 		
-		// IPTABLES	FLUSH	
-		flushIptables();
+		/// IPTABLES FLUSH
+		if ($mod_nethunter == "1") {
+			flushIptablesNetHunter();
+			setNetHunter();
+		} else {
+			flushIptables();
+		}
 		
-		$exec = "$bin_echo 1 > /proc/sys/net/ipv4/ip_forward";
-		exec_fruitywifi($exec);
-		$exec = "$bin_iptables -t nat -A POSTROUTING -o $io_out_iface -j MASQUERADE";
-		exec_fruitywifi($exec);
+		// SET FORWARDING
+		setForwarding();
 		
 		// CLEAN DHCP log
 		$exec = "$bin_echo '' > /usr/share/fruitywifi/logs/dhcp.leases";
@@ -831,14 +949,16 @@ if($service != ""  and $ap_mode == "4") {
 
 		killRegex("dnsmasq");
 		
-		$exec = "ip addr flush dev $io_in_iface";
-		exec_fruitywifi($exec);
-		
-		$exec = "$bin_ifconfig $io_in_iface down";
-		exec_fruitywifi($exec);
+		// IN IFACE DOWN
+		setInIfaceDown();
 
-		// IPTABLES	FLUSH	
-		flushIptables();
+		// IPTABLES	FLUSH
+		if ($mod_nethunter == "1") {
+			flushIptablesNetHunter();
+			setIptablesRestore();
+		} else {
+			flushIptables();
+		}
 		
 		// LOGS COPY
 		copyLogsHistory();
