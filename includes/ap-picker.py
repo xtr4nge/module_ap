@@ -92,7 +92,8 @@ def insert_ap(pkt):
     
     while isinstance(p, Dot11Elt):
         if p.ID == 0:
-            ssid = p.info        
+            ssid = p.info
+            ssid = ssid.encode('ascii',errors='ignore')
         p = p.payload
     
     # APPEND AND STORE NEW SSID

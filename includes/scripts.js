@@ -270,7 +270,18 @@ function loadStation()
 			//$('#output').html('');
 			$.each(data, function (index, value) {
                 console.log(value);
-                
+                console.log(value["station"])
+				v_station = value["station"]
+                v_inactive = value["inactive time"]
+                v_signal = value["signal"]
+                v_rxbytes = value["rx bytes"]
+                v_txbytes = value["tx bytes"]
+                //v_rxbytes = value[2]
+                //v_txbytes = value[4]
+                v_ip = value["ip"]
+                v_hostname = value["hostname"]
+				
+				/*
                 v_station = value[0][1]
                 v_inactive = value[1][1]
                 v_signal = value[8][1]
@@ -278,9 +289,10 @@ function loadStation()
                 v_txbytes = value[4][1]
                 //v_rxbytes = value[2]
                 //v_txbytes = value[4]
-                v_ip = value[19][1]
-                v_hostname = value[20][1]
-                
+                v_ip = value[18][1] //19?
+                v_hostname = value[19][1] //20?
+                */
+				
                 content = "<div>"
                 content = content + "<div class='divBSSID'>"+v_station+"</div>"
                 content = content + "<div class='div1'>"+v_hostname+"</div>"

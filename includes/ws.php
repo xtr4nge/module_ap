@@ -139,19 +139,28 @@ class WebServiceExtended extends WebService {
 						$value = explode(" ", $value);
 						$mac = $value[0];
 						$value = "station: " . $value[0];
+						$key_mac = $value[0];
 					}
 					
 					$sub = explode(": ",$value);
-					$station[] = $sub;
+					//$station[] = $sub;
+					//$station[] = array($sub[0] => $sub[1]);
+					$station[$sub[0]] = $sub[1];
+					
 				}
 				
 				if (array_key_exists($mac, $leases)) {
-					$station[] = array("ip", $leases[$mac][0]);
-					$station[] = array("hostname", $leases[$mac][1]);
+					//$station[] = array("ip" => $leases[$mac][0]);
+					//$station[] = array("hostname" => $leases[$mac][1]);
+					$station["ip"] = $leases[$mac][0];
+					$station["hostname"] = $leases[$mac][1];
 				} else {
-					$station[] = array("ip", "");
-					$station[] = array("hostname", "");
+					//$station[] = array("ip" => "");
+					//$station[] = array("hostname" => "");
+					$station["ip"] = "";
+					$station["hostname"] = "";
 				}
+				//$output[] = $station;
 				$output[] = $station;
 			}
 		}

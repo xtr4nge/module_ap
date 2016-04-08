@@ -37,6 +37,198 @@ $page = $_GET['page'];
 $install = $_GET['install'];
 $worker = $_GET['worker'];
 
+function setFruityDNS() {
+	global $api_token;
+	
+	$exec = "curl -sS 'http://localhost:8000/modules/api/includes/ws_action.php?token=$api_token&api=/module/fruitydns/start' > /dev/null &";
+	exec($exec);
+	//exec_fruitywifi($exec);
+	/*
+	global $io_in_ip;
+	$log_path = "/usr/share/fruitywifi/logs";
+	$path = "/usr/share/fruitywifi/www/modules/fruitydns";
+	include "$path/_info_.php";
+	
+	$exec = "$path/includes/dnschef-master/dnschef.py --nameserver=8.8.8.8 --logfile=$mod_logs -i $io_in_ip > /dev/null &";
+	exec_fruitywifi($exec);
+	*/
+}
+
+function setDNSmasq() {
+	global $bin_echo;
+	global $io_in_iface;
+	global $io_in_ip;
+	global $dnsmasq_domain;
+	global $bin_dnsmasq;
+	global $bin_sed;
+	global $mod_dns_type;
+	global $mod_dns_server_option;
+	global $mod_dns_spoof_all;
+	global $mod_dhcp_lease_start;
+	global $mod_dhcp_lease_end;
+	global $ap_mode;
+	
+	$path_dnsmasq_conf = "/usr/share/fruitywifi/conf/dnsmasq.conf";
+	$path_resolv= "/usr/share/fruitywifi/conf/resolv.conf";
+	
+	// SET INTERFACE
+	if ($ap_mode != "2") {
+		$exec = "$bin_sed -i 's/^interface=.*/interface=$io_in_iface/g' $path_dnsmasq_conf";
+		exec_fruitywifi($exec);
+	} else {
+		// AIRMON-NG MODE [$ap_mode == 2]
+		$exec = "$bin_sed -i 's/^interface=.*/interface=at0/g' $path_dnsmasq_conf";
+		exec_fruitywifi($exec);
+	}
+	
+	// SET DOMAIN
+	$exec = "$bin_sed -i 's/^domain=.*/domain=$dnsmasq_domain/g' $path_dnsmasq_conf";
+	exec_fruitywifi($exec);
+	
+	// SET LEASE
+	$temp = explode(".", $io_in_ip);
+	$net = $temp[0].".".$temp[1].".".$temp[2];
+	$exec = "$bin_sed -i 's/^dhcp-range=.*/dhcp-range=$net.$mod_dhcp_lease_start,$net.$mod_dhcp_lease_end,12h/g' $path_dnsmasq_conf";
+	exec_fruitywifi($exec);
+	
+	// DHCP ASSIGN DNS SERVER
+	$is_present = exec("grep -iEe '^dhcp-option=6,' $path_dnsmasq_conf");
+	if ($is_present == "") {
+		$exec = "echo '\ndhcp-option=6,$io_in_ip' >> $path_dnsmasq_conf";
+		exec_fruitywifi($exec);
+	} else {
+		$exec = "$bin_sed -i 's/^dhcp-option=6,.*/dhcp-option=6,$io_in_ip/g' $path_dnsmasq_conf";
+		exec_fruitywifi($exec);
+	}
+	
+	// DNS OPTION (DNSmasq|FruityDNS)
+	if ($mod_dns_type == "fruitydns") {
+		$is_present = exec("grep -iEe '^#port=' $path_dnsmasq_conf");
+		if ($is_present != "") {
+			$exec = "$bin_sed -i 's/#port=.*/port=0/g' $path_dnsmasq_conf";
+			exec_fruitywifi($exec);
+		} else {
+			$is_present = exec("grep -iEe '^port=' $path_dnsmasq_conf");
+			if ($is_present == "") {
+				$exec = "echo '\nport=0' >> $path_dnsmasq_conf";
+				exec_fruitywifi($exec);
+			}
+		}
+	} else if ($mod_dns_type == "dnsmasq") {
+		$is_present = exec("grep -iEe '^port=' $path_dnsmasq_conf");
+		if ($is_present != "") {
+			$exec = "$bin_sed -i 's/port=0/#port=0/g' $path_dnsmasq_conf";
+			exec_fruitywifi($exec);
+		}
+	}
+
+	// REMOVE SERVER OPTION
+	//if ($mod_dns_server_option == "0") {
+		$exec = "$bin_sed -i 's/^server=/#server=/g' $path_dnsmasq_conf";
+		exec_fruitywifi($exec);
+	//}
+	
+	// SET RESOLV-FILE OPTION	
+	$is_present = exec("grep -iEe '^resolv-file=' $path_dnsmasq_conf");
+	if ($is_present == "") {
+		$exec = "echo '\nresolv-file=$path_resolv' >> $path_dnsmasq_conf";
+		exec_fruitywifi($exec);
+	} else {
+		$exec = "$bin_sed -i 's/^resolv-file=.*/resolv-file=$path_resolv/g' $path_dnsmasq_conf";
+		exec_fruitywifi($exec);
+	}
+	
+	// SET SPOOF ALL
+	//#address=/#/$io_in_ip
+	if ($mod_dns_spoof_all == "1") {
+		$is_present = exec("grep -iEe '^#address=' $path_dnsmasq_conf");
+		if ($is_present != "") {
+			$exec = "$bin_sed -i 's,^#address=.*,address=/#/$io_in_ip,g' $path_dnsmasq_conf";
+			exec_fruitywifi($exec);
+		} else {
+			$is_present = exec("grep -iEe '^address=' $path_dnsmasq_conf");
+			if ($is_present == "") {
+				$exec = "echo '\naddress=/#/$io_in_ip' >> $path_dnsmasq_conf";
+				exec_fruitywifi($exec);
+			}
+		}
+	} else {
+		$exec = "$bin_sed -i 's,^address=.*,#address=/#/$io_in_ip,g' $path_dnsmasq_conf";
+		exec_fruitywifi($exec);
+	}
+	
+	$exec = "$bin_echo 'nameserver $io_in_ip\nnameserver 8.8.8.8' > /usr/share/fruitywifi/conf/resolv.conf ";
+	exec_fruitywifi($exec);
+	
+	//$exec = "$bin_echo 'nameserver $io_in_ip\nnameserver 8.8.8.8' > /etc/resolv.conf ";
+	//exec_fruitywifi($exec);
+	
+	//$exec = "chattr +i /etc/resolv.conf";
+	//exec_fruitywifi($exec);
+	
+	$exec = "$bin_dnsmasq -C /usr/share/fruitywifi/conf/dnsmasq.conf";
+	exec_fruitywifi($exec);
+}
+
+function hostapdStationWhitelist($path_hostapd_conf) {
+	global $bin_sed;
+	global $bin_echo;
+	
+	$is_present = exec("grep -iEe '^#macaddr_acl' $path_hostapd_conf");
+	if ($is_present != "") {
+		$exec = "$bin_sed -i 's/#macaddr_acl.*/macaddr_acl=1/g' $path_hostapd_conf";
+		exec_fruitywifi($exec);
+	} else {
+		$is_present = exec("grep -iEe '^macaddr_acl' $path_hostapd_conf");
+		if ($is_present == "") {
+			$exec = "echo '\nmacaddr_acl=1' >> $path_hostapd_conf";
+			exec_fruitywifi($exec);
+		}
+	}
+	
+	$is_present = exec("grep -iEe '^#accept_mac_file' $path_hostapd_conf");
+	if ($is_present != "") {
+		$exec = "$bin_sed -i 's,#accept_mac_file.*,accept_mac_file=/usr/share/fruitywifi/conf/pool-station.conf,g' $path_hostapd_conf";
+		exec_fruitywifi($exec);
+	} else {
+		$is_present = exec("grep -iEe '^accept_mac_file' $path_hostapd_conf");
+		if ($is_present == "") {
+			$exec = "echo '\naccept_mac_file=/usr/share/fruitywifi/conf/pool-station.conf' >> $path_hostapd_conf";
+			exec_fruitywifi($exec);
+		}
+	}
+
+}
+
+function hostapdStationBlacklist($path_hostapd_conf) {
+	global $bin_sed;
+	global $bin_echo;
+	
+	$is_present = exec("grep -iEe '^#macaddr_acl' $path_hostapd_conf");
+	if ($is_present != "") {
+		$exec = "$bin_sed -i 's/#macaddr_acl.*/macaddr_acl=0/g' $path_hostapd_conf";
+		exec_fruitywifi($exec);
+	} else {
+		$is_present = exec("grep -iEe '^macaddr_acl' $path_hostapd_conf");
+		if ($is_present == "") {
+			$exec = "echo '\nmacaddr_acl=0' >> $path_hostapd_conf";
+			exec_fruitywifi($exec);
+		}
+	}
+	
+	$is_present = exec("grep -iEe '^#deny_mac_file' $path_hostapd_conf");
+	if ($is_present != "") {
+		$exec = "$bin_sed -i 's,#deny_mac_file.*,deny_mac_file=/usr/share/fruitywifi/conf/pool-station.conf,g' $path_hostapd_conf";
+		exec_fruitywifi($exec);
+	} else {
+		$is_present = exec("grep -iEe '^deny_mac_file' $path_hostapd_conf");
+		if ($is_present == "") {
+			$exec = "echo '\ndeny_mac_file=/usr/share/fruitywifi/conf/pool-station.conf' >> $path_hostapd_conf";
+			exec_fruitywifi($exec);
+		}
+	}
+}
+
 function flushIptables() {	
 	global $bin_iptables;
 	
@@ -52,7 +244,7 @@ function flushIptables() {
 	exec_fruitywifi($exec);
 	$exec = "$bin_iptables -t mangle -X";
 	exec_fruitywifi($exec);
-	echo $exec;
+	//echo $exec;
 }
 
 function flushIptablesNetHunter() {
@@ -332,7 +524,15 @@ if ($worker == "picker") {
 # polite: spoof-response.py
 if ($worker == "polite") {
 	if ($action == "start") {
-		$exec = "python ap-polite.py -i mon0 -s $mod_filter_polite_station -e $mod_filter_polite_ssid -b $mod_scatter_bssid  > /dev/null &";
+		
+		if ($mod_filter_scatter_bssid == "1") {
+			$opt .= " -b $mod_scatter_bssid";
+		} else {
+			$opt .= " -b " . getMAC($io_in_iface);
+		}
+		
+		//$exec = "python ap-polite.py -i mon0 -s $mod_filter_polite_station -e $mod_filter_polite_ssid -b $use_bssid  > /dev/null &";
+		$exec = "python ap-polite.py -i mon0 -s $mod_filter_polite_station -e $mod_filter_polite_ssid $opt  > /dev/null &";
 		exec_fruitywifi($exec);
 	} else if ($action == "stop") {
 		killRegex("ap-polite.py");
@@ -388,10 +588,12 @@ if($service != "" and $ap_mode == "1") {
 		exec_fruitywifi($exec);
 
 		killRegex("dnsmasq");
+		killRegex("dnschef.py");
 		
 		// IN IFACE UP
 		setInIfaceUp();
 		
+		/*
 		$exec = "$bin_echo 'nameserver $io_in_ip\nnameserver 8.8.8.8' > /etc/resolv.conf ";
 		exec_fruitywifi($exec);
 		
@@ -400,7 +602,31 @@ if($service != "" and $ap_mode == "1") {
 		
 		$exec = "$bin_dnsmasq -C /usr/share/fruitywifi/conf/dnsmasq.conf";
 		exec_fruitywifi($exec);
-	
+		*/
+		
+		// SET HOSTAPD CONF
+		if ($hostapd_secure == 1) {
+			// BLACKLIST|WHITELIST PATH
+			$path_hostapd_conf = "/usr/share/fruitywifi/conf/hostapd-secure.conf";
+		} else {
+			// BLACKLIST|WHITELIST PATH
+			$path_hostapd_conf = "/usr/share/fruitywifi/conf/hostapd.conf";
+		}
+		
+		// SET HOSTAPD [BLACK|WHITE]
+		$exec = "$bin_sed -i 's/^macaddr_acl.*/#macaddr_acl=0/g' $path_hostapd_conf";
+		exec_fruitywifi($exec);
+		$exec = "$bin_sed -i 's,^accept_mac_file.*,#accept_mac_file=/usr/share/fruitywifi/conf/pool-station.conf,g' $path_hostapd_conf";
+		exec_fruitywifi($exec);
+		$exec = "$bin_sed -i 's,^deny_mac_file.*,#deny_mac_file=/usr/share/fruitywifi/conf/pool-station.conf,g' $path_hostapd_conf";
+		exec_fruitywifi($exec);
+		
+		if ($mod_filter_karma_station == "blacklist") {
+			hostapdStationBlacklist($path_hostapd_conf);
+		} else if ($mod_filter_karma_station == "whitelist") {
+			hostapdStationWhitelist($path_hostapd_conf);
+		}
+		
 		//Verifies if karma-hostapd is installed
 		if ($hostapd_secure == 1) {
 			
@@ -465,7 +691,15 @@ if($service != "" and $ap_mode == "1") {
 		// CLEAN DHCP log
 		$exec = "$bin_echo '' > /usr/share/fruitywifi/logs/dhcp.leases";
 		exec_fruitywifi($exec);
-
+		
+		// SET DNSMASQ (DHCP|DNS)
+		setDNSmasq();
+		
+		// SET FruityDNS (DNS)
+		if ($mod_dns_type == "fruitydns") {
+			setFruityDNS();
+		}
+		
 	} else if($action == "stop") {
 
 		// REMOVE lines from NetworkManager
@@ -478,14 +712,17 @@ if($service != "" and $ap_mode == "1") {
 		
 		$exec = "$bin_rm /var/run/hostapd/$io_in_iface";
 		exec_fruitywifi($exec);
-
+		
+		/*
 		$exec = "chattr -i /etc/resolv.conf";
         exec_fruitywifi($exec);
-
+		*/
+		
 		$exec = "$bin_killall dnsmasq";
 		exec_fruitywifi($exec);
 
 		killRegex("dnsmasq");
+		killRegex("dnschef.py");
 		
 		// IN IFACE DOWN
 		setInIfaceDown();
@@ -505,93 +742,94 @@ if($service != "" and $ap_mode == "1") {
 }
 
 // AIRCRACK
-if($service != "" and $ap_mode == "2") { // AIRCRACK (airbase-ng)
+if($service != "" and $ap_mode == "2") {
 	if ($action == "start") {
-
-		$exec = "/usr/bin/sudo /usr/sbin/airmon-ng stop mon0";
-		exec_fruitywifi($exec);
-	
-		$exec = "$bin_killall airbase-ng";
-		exec_fruitywifi($exec);
-	
-		killRegex("airbase-ng");
-	
-		$exec = "$bin_killall dnsmasq";
-		exec_fruitywifi($exec);
 		
-		killRegex("dnsmasq");
+		// SAVE IPTABLES
+		setIptablesSave();
 		
-		$exec = "$bin_echo 'nameserver $io_in_ip\nnameserver 8.8.8.8' > /etc/resolv.conf ";
-		exec_fruitywifi($exec);
-		
-		$exec = "chattr +i /etc/resolv.conf";
-        exec_fruitywifi($exec);
+		// CHECK FOR POOL FILES
+		checkPool();
 		
 		// SETUP NetworkManager
 		setNetworkManager();
-					
-		$exec = "/usr/bin/sudo /usr/sbin/airmon-ng start $io_in_iface";
-		exec_fruitywifi($exec);
 		
-		//$exec = "/usr/sbin/airbase-ng -e $hostapd_ssid -c 2 mon0 > /dev/null &"; //-P (all)
-		$exec = "/usr/sbin/airbase-ng -e $hostapd_ssid -c 2 mon0 > /tmp/airbase.log &"; //-P (all)
+		// IN IFACE DOWN
+		setInIfaceDown();
+		
+		killRegex("airbase-ng");
+
+		$exec = "$bin_killall dnsmasq";
 		exec_fruitywifi($exec);
 
-		//$exec = "$bin_ifconfig at0 up 10.0.0.1 netmask 255.255.255.0";
-		//exec("$bin_danger \"" . $exec . "\"" ); //DEPRECATED
+		killRegex("dnsmasq");
+		killRegex("dnschef.py");
+
+		// EXEC AIRBASE
+		$exec = "/usr/sbin/airbase-ng -e $hostapd_ssid -c 2 $io_in_iface > /tmp/airbase.log &"; //-P (all)
+		exec_fruitywifi($exec);
 
 		$exec = "sleep 1";
 		exec_fruitywifi($exec);
-
+		
 		$exec = "$bin_ifconfig at0 up";
 		exec_fruitywifi($exec);
 		$exec = "$bin_ifconfig at0 up $io_in_ip netmask 255.255.255.0";
 		exec_fruitywifi($exec);
-
-		$exec = "$bin_dnsmasq -C /usr/share/fruitywifi/conf/dnsmasq.conf";
-		exec_fruitywifi($exec);
 		
-		// IPTABLES	FLUSH	
-		flushIptables();
 		
-		$exec = "$bin_echo 1 > /proc/sys/net/ipv4/ip_forward";
-		exec_fruitywifi($exec);
-		$exec = "$bin_iptables -t nat -A POSTROUTING -o $io_out_iface -j MASQUERADE";
-		exec_fruitywifi($exec);
+		// IPTABLES	FLUSH
+		if ($mod_nethunter == "1") {
+			flushIptablesNetHunter();
+			setNetHunter();
+		} else {
+			flushIptables();
+		}
+		
+		// SET FORWARDING
+		setForwarding();
 		
 		// CLEAN DHCP log
 		$exec = "$bin_echo '' > /usr/share/fruitywifi/logs/dhcp.leases";
 		exec_fruitywifi($exec);
-
+		
+		// SET DNSMASQ (DHCP|DNS)
+		setDNSmasq();
+		
+		// SET FruityDNS (DNS)
+		if ($mod_dns_type == "fruitydns") {
+			setFruityDNS();
+		}
+		
 	} else if($action == "stop") {
 
 		// REMOVE lines from NetworkManager
 		cleanNetworkManager();
-
-		$exec = "$bin_killall airbase-ng";
-		exec_fruitywifi($exec);
-
+		
 		killRegex("airbase-ng");
 		
-		$exec = "chattr -i /etc/resolv.conf";
-        exec_fruitywifi($exec);
-
 		$exec = "$bin_killall dnsmasq";
 		exec_fruitywifi($exec);
 
 		killRegex("dnsmasq");
+		killRegex("dnschef.py");
 		
-		$exec = "/usr/bin/sudo /usr/sbin/airmon-ng stop mon0";
-		exec_fruitywifi($exec);
-
+		// IN IFACE DOWN
+		setInIfaceDown();
+		
 		$exec = "ip addr flush dev at0";
 		exec_fruitywifi($exec);
 		
 		$exec = "$bin_ifconfig at0 down";
 		exec_fruitywifi($exec);
-
-		// IPTABLES	FLUSH	
-		flushIptables();
+		
+		// IPTABLES	FLUSH
+		if ($mod_nethunter == "1") {
+			flushIptablesNetHunter();
+			setIptablesRestore();
+		} else {
+			flushIptables();
+		}
 		
 		// LOGS COPY
 		copyLogsHistory();
@@ -624,10 +862,12 @@ if($service != ""  and $ap_mode == "3") {
 		exec_fruitywifi($exec);
 
 		killRegex("dnsmasq");
+		killRegex("dnschef.py");
 		
 		// IN IFACE UP
 		setInIfaceUp();
 		
+		/*
 		$exec = "$bin_echo 'nameserver $io_in_ip\nnameserver 8.8.8.8' > /etc/resolv.conf ";
 		exec_fruitywifi($exec);
 		
@@ -636,7 +876,31 @@ if($service != ""  and $ap_mode == "3") {
 		
 		$exec = "$bin_dnsmasq -C /usr/share/fruitywifi/conf/dnsmasq.conf";
 		exec_fruitywifi($exec);
-	
+		*/
+		
+		// SET HOSTAPD CONF
+		if ($hostapd_secure == 1) {
+			// BLACKLIST|WHITELIST PATH
+			$path_hostapd_conf = "/usr/share/fruitywifi/www/modules/mana/includes/conf/hostapd-secure.conf";
+		} else {
+			// BLACKLIST|WHITELIST PATH
+			$path_hostapd_conf = "/usr/share/fruitywifi/www/modules/mana/includes/conf/hostapd.conf";
+		}
+		
+		// SET HOSTAPD [BLACK|WHITE]
+		$exec = "$bin_sed -i 's/^macaddr_acl.*/#macaddr_acl=0/g' $path_hostapd_conf";
+		exec_fruitywifi($exec);
+		$exec = "$bin_sed -i 's,^accept_mac_file.*,#accept_mac_file=/usr/share/fruitywifi/conf/pool-station.conf,g' $path_hostapd_conf";
+		exec_fruitywifi($exec);
+		$exec = "$bin_sed -i 's,^deny_mac_file.*,#deny_mac_file=/usr/share/fruitywifi/conf/pool-station.conf,g' $path_hostapd_conf";
+		exec_fruitywifi($exec);
+		
+		if ($mod_filter_karma_station == "blacklist") {
+			hostapdStationBlacklist($path_hostapd_conf);
+		} else if ($mod_filter_karma_station == "whitelist") {
+			hostapdStationWhitelist($path_hostapd_conf);
+		}
+		
 		//Verifies if mana-hostapd is installed
 		if ($hostapd_secure == 1) {
 			
@@ -711,7 +975,15 @@ if($service != ""  and $ap_mode == "3") {
 		// CLEAN DHCP log
 		$exec = "$bin_echo '' > /usr/share/fruitywifi/logs/dhcp.leases";
 		exec_fruitywifi($exec);
-
+		
+		// SET DNSMASQ (DHCP|DNS)
+		setDNSmasq();
+		
+		// SET FruityDNS (DNS)
+		if ($mod_dns_type == "fruitydns") {
+			setFruityDNS();
+		}
+		
 		// FILTER MACADDRESS STATIONS [BLACK|WHITE]
 		if ($mod_filter_karma_station == "blacklist") {
 			// SET KARMA_BLACK
@@ -729,14 +1001,6 @@ if($service != ""  and $ap_mode == "3") {
 		}
 		
 	} else if($action == "stop") {
-
-		/*
-		// REMOVE lines from NetworkManager
-		$exec = "$bin_sed -i '/unmanaged/d' /etc/NetworkManager/NetworkManager.conf";
-		exec_fruitywifi($exec);
-		$exec = "$bin_sed -i '/\[keyfile\]/d' /etc/NetworkManager/NetworkManager.conf";
-		exec_fruitywifi($exec);
-		*/
 		
 		// REMOVE lines from NetworkManager
 		cleanNetworkManager();
@@ -749,13 +1013,16 @@ if($service != ""  and $ap_mode == "3") {
 		$exec = "$bin_rm /var/run/hostapd/$io_in_iface";
 		exec_fruitywifi($exec);
 		
+		/*
 		$exec = "chattr -i /etc/resolv.conf";
         exec_fruitywifi($exec);
+		*/
 		
 		$exec = "$bin_killall dnsmasq";
 		exec_fruitywifi($exec);
 
 		killRegex("dnsmasq");
+		killRegex("dnschef.py");
 		
 		// IN IFACE DOWN
 		setInIfaceDown();
@@ -799,10 +1066,12 @@ if($service != ""  and $ap_mode == "4") {
 		exec_fruitywifi($exec);
 
 		killRegex("dnsmasq");
+		killRegex("dnschef.py");
 		
 		// IN IFACE UP
 		setInIfaceUp();
 		
+		/*
 		$exec = "$bin_echo 'nameserver $io_in_ip\nnameserver 8.8.8.8' > /etc/resolv.conf ";
 		exec_fruitywifi($exec);
 		
@@ -811,7 +1080,31 @@ if($service != ""  and $ap_mode == "4") {
 		
 		$exec = "$bin_dnsmasq -C /usr/share/fruitywifi/conf/dnsmasq.conf";
 		exec_fruitywifi($exec);
-	
+		*/
+		
+		// SET HOSTAPD CONF
+		if ($hostapd_secure == 1) {
+			// BLACKLIST|WHITELIST PATH
+			$path_hostapd_conf = "/usr/share/fruitywifi/www/modules/karma/includes/conf/hostapd-secure.conf";
+		} else {
+			// BLACKLIST|WHITELIST PATH
+			$path_hostapd_conf = "/usr/share/fruitywifi/www/modules/karma/includes/conf/hostapd.conf";
+		}
+		
+		// SET HOSTAPD [BLACK|WHITE]
+		$exec = "$bin_sed -i 's/^macaddr_acl.*/#macaddr_acl=0/g' $path_hostapd_conf";
+		exec_fruitywifi($exec);
+		$exec = "$bin_sed -i 's,^accept_mac_file.*,#accept_mac_file=/usr/share/fruitywifi/conf/pool-station.conf,g' $path_hostapd_conf";
+		exec_fruitywifi($exec);
+		$exec = "$bin_sed -i 's,^deny_mac_file.*,#deny_mac_file=/usr/share/fruitywifi/conf/pool-station.conf,g' $path_hostapd_conf";
+		exec_fruitywifi($exec);
+		
+		if ($mod_filter_karma_station == "blacklist") {
+			hostapdStationBlacklist($path_hostapd_conf);
+		} else if ($mod_filter_karma_station == "whitelist") {
+			hostapdStationWhitelist($path_hostapd_conf);
+		}
+		
 		//Verifies if karma-hostapd is installed
 		if ($hostapd_secure == 1) {
 			
@@ -886,6 +1179,14 @@ if($service != ""  and $ap_mode == "4") {
 		// CLEAN DHCP log
 		$exec = "$bin_echo '' > /usr/share/fruitywifi/logs/dhcp.leases";
 		exec_fruitywifi($exec);
+		
+		// SET DNSMASQ (DHCP|DNS)
+		setDNSmasq();
+		
+		// SET FruityDNS (DNS)
+		if ($mod_dns_type == "fruitydns") {
+			setFruityDNS();
+		}
 
 		// FILTER MACADDRESS STATIONS [BLACK|WHITE]
 		if ($mod_filter_karma_station == "blacklist") {
@@ -921,14 +1222,6 @@ if($service != ""  and $ap_mode == "4") {
 		
 		
 	} else if($action == "stop") {
-
-		/*
-		// REMOVE lines from NetworkManager
-		$exec = "$bin_sed -i '/unmanaged/d' /etc/NetworkManager/NetworkManager.conf";
-		exec_fruitywifi($exec);
-		$exec = "$bin_sed -i '/[keyfile]/d' /etc/NetworkMxanager/NetworkManager.conf";
-		exec_fruitywifi($exec);
-		*/
 		
 		// REMOVE lines from NetworkManager
 		cleanNetworkManager();
@@ -940,14 +1233,17 @@ if($service != ""  and $ap_mode == "4") {
 		
 		$exec = "$bin_rm /var/run/hostapd/$io_in_iface";
 		exec_fruitywifi($exec);
-
+		
+		/*
 		$exec = "chattr -i /etc/resolv.conf";
         exec_fruitywifi($exec);
-
+		*/
+		
 		$exec = "$bin_killall dnsmasq";
 		exec_fruitywifi($exec);
 
 		killRegex("dnsmasq");
+		killRegex("dnschef.py");
 		
 		// IN IFACE DOWN
 		setInIfaceDown();

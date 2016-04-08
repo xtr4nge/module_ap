@@ -17,6 +17,9 @@
 */ 
 ?>
 <? include "../../header.php"; ?>
+<?
+include "../../login_check.php";
+?>
 <!DOCTYPE HTML>
 <html lang="en">
 <head>
@@ -104,7 +107,6 @@ $(function() {
 <br>
 
 <?
-include "../../login_check.php";
 include "../../config/config.php";
 include "_info_.php";
 include "../../functions.php";
@@ -146,6 +148,28 @@ if ($logfile != "" and $action == "delete") {
     ?>
     <br>
     <?
+    $ismoduleup = exec("ps aux | grep dnsmasq | grep -v grep");
+    if ($ismoduleup != "") {
+        echo "&nbsp;&nbsp;&nbsp; DHCP  <font color='lime'><b>enabled</b></font>.&nbsp;";
+    } else { 
+        echo "&nbsp;&nbsp;&nbsp; DHCP  <font color='red'><b>disabled</b></font>."; 
+    }
+    ?>
+    <br>
+    <?
+    if ($mod_dns_type == "fruitydns") {
+        $ismoduleup = exec("ps aux | grep dnschef.py | grep -v grep");
+    } else {
+        $ismoduleup = exec("ps aux | grep dnsmasq | grep -v grep");
+    }
+    if ($ismoduleup != "") {
+        echo "&nbsp;&nbsp;&nbsp;&nbsp; DNS  <font color='lime'><b>enabled</b></font>.&nbsp;";
+    } else { 
+        echo "&nbsp;&nbsp;&nbsp;&nbsp; DNS  <font color='red'><b>disabled</b></font>."; 
+    }
+    ?>
+    <br>
+    <?
     if ($ap_mode == 1) {
         $mode_name = "Hostapd";
         $log_ap = "";
@@ -179,6 +203,12 @@ if ($logfile != "" and $action == "delete") {
     }
     ?>
     <?
+    echo "&nbsp;&nbsp;&nbsp; Mode <b>$mode_name</b>";
+    ?>
+</div>
+<br>
+<div class="rounded-bottom">
+    <?
     $iface_mon0 = exec("/sbin/ifconfig | grep mon0 ");
     ?>
     <?
@@ -191,7 +221,7 @@ if ($logfile != "" and $action == "delete") {
             echo "&nbsp;&nbsp;Picker <font color='red'><b>disabled</b></font>. | <a href='includes/module_action.php?worker=picker&action=start&page=module'><b>start</b></a>"; 
         }
     } else {
-        echo "&nbsp;&nbsp;Picker &nbsp;[ <a href='../../../page_config_adv.php'>start</a> mon0 ]";
+        echo "&nbsp;&nbsp;Picker [ <a href='../../../page_config_adv.php'>start</a> mon0 ]";
     }
     ?>
     <br>
@@ -205,7 +235,7 @@ if ($logfile != "" and $action == "delete") {
             echo "&nbsp;Scatter <font color='red'><b>disabled</b></font>. | <a href='includes/module_action.php?worker=scatter&action=start&page=module'><b>start</b></a>"; 
         }
     } else {
-        echo "&nbsp;&nbsp;Scatter [ <a href='../../../page_config_adv.php'>start</a> mon0 ]";
+        echo "&nbsp;Scatter [ <a href='../../../page_config_adv.php'>start</a> mon0 ]";
     }
     ?>
     <br>
@@ -219,12 +249,8 @@ if ($logfile != "" and $action == "delete") {
             echo "&nbsp;&nbsp;Polite <font color='red'><b>disabled</b></font>. | <a href='includes/module_action.php?worker=polite&action=start&page=module'><b>start</b></a>"; 
         }
     } else {
-        echo "&nbsp;&nbsp;Polite &nbsp;[ <a href='../../../page_config_adv.php'>start</a> mon0 ]";
+        echo "&nbsp;&nbsp;Polite [ <a href='../../../page_config_adv.php'>start</a> mon0 ]";
     }
-    ?>
-    <br>
-    <?
-    echo "&nbsp;&nbsp;&nbsp; Mode <b>$mode_name</b>";
     ?>
     
 </div>
@@ -240,10 +266,11 @@ Loading, please wait...
 
     <div id="result" class="module">
         <ul>
-            <li><a href="#tab-dnsmasq">DNSmasq</a></li>
-            <li><a href="#tab-log">Log</a></li>
+            <li><a href="#tab-dnsmasq">LogDHCP</a></li>
+            <li><a href="#tab-log">LogAP</a></li>
             <li><a href="#tab-clients">Clients</a></li>
             <li><a href="#tab-config">Config</a></li>
+            <li><a href="#tab-dns-config">DHCP-DNS</a></li>
             <li><a href="#tab-filter">Filter</a></li>
             <li><a href="#tab-picker">Picker</a></li>
             <li><a href="#tab-history">History</a></li>
@@ -340,8 +367,8 @@ Loading, please wait...
             
             <hr>
             
-            <h4>Karma | Mana</h4>
-            Filter Station (Karma and Mana only) 
+            <h4>Blacklist | Whitelist</h4>
+            Filter Station
             <br>
             <div class="btn-group btn-group-sm" data-toggle="buttons">
                 <label class="btn btn-default <? if ($mod_filter_karma_station == "none") echo "active" ?>">
@@ -436,21 +463,75 @@ Loading, please wait...
                 </label>
             </div>
             
-            <script>
-            $('.btn-default').on('click', function(){
-                //alert($(this).find('input').attr('name'));
-                //alert($(this).find('input').attr('id'));
-                $(this).addClass('active').siblings('.btn').removeClass('active');
-                param = ($(this).find('input').attr('name'));
-                value = ($(this).find('input').attr('id'));
-                //setOption(param, value);
-                $.getJSON('../api/includes/ws_action.php?api=/config/module/ap/'+param+'/'+value, function(data) {});
-            }); 
-            </script>
-        
         </div>
         
         <!-- END CONFIG -->
+        
+        <!-- DNS-DHCP-CONFIG -->
+
+        <div id="tab-dns-config" class="history">
+            <h4>
+                <!-- <input id="mod_dhcp" type="checkbox" name="my-checkbox" <? if ($mod_dhcp == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_dhcp')" > -->
+                DHCP
+            </h4>
+            
+            <?
+            $temp = explode(".", $io_in_ip);
+            $range = $temp[0].".".$temp[1].".".$temp[2]
+            ?>
+            LEASE IP (<?=$range?>.xx - <?=$range?>.yy)
+            <br>
+            <input id="dhcp_lease_start" class="form-control input-sm" placeholder="START" value="<?=$mod_dhcp_lease_start;?>" style="width: 50px; display: inline-block; font-family: monospace; " type="text" />
+            -
+            <input id="dhcp_lease_end" class="form-control input-sm" placeholder="END" value="<?=$mod_dhcp_lease_end;?>" style="width: 50px; display: inline-block; font-family: monospace; " type="text" />
+            <input class="btn btn-default btn-sm" type="submit" value="save" onclick="setLease();">
+            <script>
+                function setLease() {
+                    setOption('dhcp_lease_start', 'mod_dhcp_lease_start');
+                    setOption('dhcp_lease_end', 'mod_dhcp_lease_end');
+                }
+            </script>
+            <hr>
+            
+            <h4>
+                <!-- <input id="mod_dns" type="checkbox" name="my-checkbox" <? if ($mod_dns == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_dns')" > -->
+                DNS
+            </h4>
+            
+            <div class="btn-group btn-group-sm" data-toggle="buttons">
+                <label class="btn btn-default <? if ($mod_dns_type == "dnsmasq") echo "active" ?>">
+                  <input type="radio" name="mod_dns_type" id="dnsmasq" autocomplete="off" checked> DNSmasq
+                </label>
+                <label class="btn btn-default <? if ($mod_dns_type == "fruitydns") echo "active" ?>">
+                  <input type="radio" name="mod_dns_type" id="fruitydns" autocomplete="off"> FruityDNS
+                </label>
+            </div>
+            <!--
+            <br><br>
+            
+            <input id="mod_dns_server" type="checkbox" name="my-checkbox" <? if ($mod_dns_server == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_dns_server')" >
+            SET DNS SERVER
+            <br>
+            <input id="dns_server_ip" class="form-control input-sm" placeholder="DNS-SERVERs" value="<?=$mod_dns_server_ip;?>" style="width: 120px; display: inline-block; font-family: monospace " type="text" />
+            <input class="btn btn-default btn-sm" type="submit" value="save" onclick="setOption('dns_server_ip', 'mod_dns_server_ip')">
+            -->
+            <br><br>
+            
+            <input id="mod_dns_spoof_all" type="checkbox" name="my-checkbox" <? if ($mod_dns_spoof_all == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_dns_spoof_all')" >
+            SPOOF ALL (option dnsmasq)
+            <!--
+            <br>
+            <input id="dns_spoof_all_ip" class="form-control input-sm" placeholder="BSSID" value="<?=$mod_dns_spoof_all_ip;?>" style="width: 120px; display: inline-block; font-family: monospace " type="text" />
+            <input class="btn btn-default btn-sm" type="submit" value="save" onclick="setOption('dns_spoof_all_ip', 'mod_dns_spoof_all_ip')">
+            
+            <br><br>
+            
+            <input id="dns_server_option" type="checkbox" name="my-checkbox" <? if ($mod_dns_server_option == "1") echo "checked"; ?> onclick="setCheckbox(this, 'dns_server_option')" >
+            SERVER (option dnsmasq)
+            -->
+        </div>
+        
+        <!-- END DNS-DHCP-CONFIG -->
         
         <!-- FILTER -->
         
@@ -483,7 +564,7 @@ Loading, please wait...
 
         <div id="tab-picker" class="history">
             
-            <form id="formLogs-Refresh" name="formLogs-Refresh" method="POST" autocomplete="off" action="?tab=6">
+            <form id="formLogs-Refresh" name="formLogs-Refresh" method="POST" autocomplete="off" action="?tab=7">
             <input class="btn btn-default btn-sm" type="submit" value="Refresh">
             <br><br>
             <?
@@ -516,7 +597,7 @@ Loading, please wait...
 
             for ($i = 0; $i < count($logs); $i++) {
                 $filename = str_replace(".log","",str_replace($mod_logs_history,"",$logs[$i]));
-                echo "<a href='?logfile=".str_replace(".log","",str_replace($mod_logs_history,"",$logs[$i]))."&action=delete&tab=7'><b>x</b></a> ";
+                echo "<a href='?logfile=".str_replace(".log","",str_replace($mod_logs_history,"",$logs[$i]))."&action=delete&tab=8'><b>x</b></a> ";
                 echo $filename . " | ";
                 echo "<a href='?logfile=".str_replace(".log","",str_replace($mod_logs_history,"",$logs[$i]))."&action=view'><b>view</b></a>";
                 echo "<br>";
@@ -576,6 +657,10 @@ Loading, please wait...
         echo "<script>";
         echo "$( '#result' ).tabs({ active: 6 });";
         echo "</script>";
+    } else if ($_GET["tab"] == 8) {
+        echo "<script>";
+        echo "$( '#result' ).tabs({ active: 7 });";
+        echo "</script>";
     } 
     ?>
 
@@ -586,6 +671,18 @@ $(document).ready(function() {
     $('#body').show();
     $('#msg').hide();
 });
+</script>
+
+<script>
+    $('.btn-default').on('click', function(){
+        //alert($(this).find('input').attr('name'));
+        //alert($(this).find('input').attr('id'));
+        $(this).addClass('active').siblings('.btn').removeClass('active');
+        param = ($(this).find('input').attr('name'));
+        value = ($(this).find('input').attr('id'));
+        //setOption(param, value);
+        $.getJSON('../api/includes/ws_action.php?api=/config/module/ap/'+param+'/'+value, function(data) {});
+    }); 
 </script>
 
 <script>
