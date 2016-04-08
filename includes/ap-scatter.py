@@ -128,9 +128,9 @@ while True:
         p /= Dot11Elt(ID=1, info="\x82\x84\x8b\x96\x0c\x12\x18\x24")
         p /= Dot11Elt(ID=3, info="\x06")
         p /= Dot11Elt(ID=5, info="\x01\x02\x00\x00")
-        p /= Dot11Elt(ID=7, info="\x44\x45\x20\x01\x0d\x14")
-        p /= Dot11Elt(ID=42, info="\x04")
-        p /= Dot11Elt(ID=50, info="\x30\x48\x60\x6c")
+        #p /= Dot11Elt(ID=7, info="\x44\x45\x20\x01\x0d\x14")
+        #p /= Dot11Elt(ID=42, info="\x04")
+        #p /= Dot11Elt(ID=50, info="\x30\x48\x60\x6c")
         sendp(p, iface=INTERFACE, count = 2, inter = .1)
         
 
