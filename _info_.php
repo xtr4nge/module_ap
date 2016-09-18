@@ -1,6 +1,6 @@
 <?
 $mod_name="ap";
-$mod_version="1.4";
+$mod_version="1.5";
 $mod_path="/usr/share/fruitywifi/www/modules/$mod_name";
 //$mod_logs="$log_path/$mod_name.log";
 $mod_logs="$log_path/dnsmasq.log";
@@ -27,6 +27,21 @@ $mod_dns_server_ip="8.8.8.8";
 $mod_dns_server_option="0";
 $mod_dns_spoof_all="0";
 $mod_dns_spoof_all_ip="10.0.0.1";
+
+# AP
+$mod_ap_hw_mode="g";
+$mod_ap_channel="6";
+$mod_ap_country_code="GB";
+$mod_ap_ieee80211n="0";
+$mod_ap_wme_enabled="0";
+$mod_ap_wmm_enabled="0";
+$mod_ap_ht_capab_enabled="0";
+$mod_ap_ht_capab="[HT20][SHORT-GI-20][HT40+][SHORT-GI-40][TX-STBC][RX-STBC2]";
+$mod_ap_karma_loud="0";
+
+# OTHER
+$mod_network_manager_stop="1";
+$mod_dnsmasq_dhcp_script="1";
 
 # KARMA
 $mod_filter_karma_station="none";

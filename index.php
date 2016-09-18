@@ -31,7 +31,7 @@ include "../../login_check.php";
 <link rel="stylesheet" href="../css/style.css" />
 <link rel="stylesheet" href="../../../style.css" />
 
-<script src="includes/scripts.js"></script>
+<script src="includes/scripts.js?<?=time()?>"></script>
 
 <style>
         .div0 {
@@ -269,9 +269,10 @@ Loading, please wait...
             <li><a href="#tab-dnsmasq">LogDHCP</a></li>
             <li><a href="#tab-log">LogAP</a></li>
             <li><a href="#tab-clients">Clients</a></li>
-            <li><a href="#tab-config">Config</a></li>
+            <li><a href="#tab-ap">AP</a></li>
             <li><a href="#tab-dns-config">DHCP-DNS</a></li>
             <li><a href="#tab-filter">Filter</a></li>
+            <li><a href="#tab-worker">Worker</a></li>
             <li><a href="#tab-picker">Picker</a></li>
             <li><a href="#tab-history">History</a></li>
             <li><a href="#tab-about">About</a></li>
@@ -297,7 +298,7 @@ Loading, please wait...
                 //$data = implode("\n",array_reverse($data_array));
                 
             ?>
-            <textarea id="output" class="module-content" style="font-family: courier;"><?=htmlspecialchars($data)?></textarea>
+            <textarea id="output" class="module-content" style="font-family: monospace, courier;"><?=htmlspecialchars($data)?></textarea>
             <input type="hidden" name="type" value="logs">
             </form>
             
@@ -326,7 +327,7 @@ Loading, please wait...
                 //$data = implode("\n",array_reverse($data_array));
                 
             ?>
-            <textarea id="output" class="module-content" style="font-family: courier;"><?=htmlspecialchars($data)?></textarea>
+            <textarea id="output" class="module-content" style="font-family: monospace, courier;"><?=htmlspecialchars($data)?></textarea>
             <input type="hidden" name="type" value="logs">
             </form>
             
@@ -356,18 +357,84 @@ Loading, please wait...
         
         <!-- END CLIENTS -->
         
-        <!-- CONFIG -->
-
-        <div id="tab-config" class="history">
+        <!-- AP -->
+        
+        <div id="tab-ap" class="history">
             
             <h4>
                 <input id="mod_nethunter" type="checkbox" name="my-checkbox" <? if ($mod_nethunter == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_nethunter')" >
                 NetHunter
-            </h4>
+            </h4> 
             
             <hr>
             
+            <h4>Hostapd</h4>
+            
+            <h5>
+                <span style="width: 70px; display: inline-block;">hw_mode</span>
+                <select class="btn btn-default btn-sm" id="ap_hw_mode" onchange="setOptionSelect(this, 'mod_ap_hw_mode')" style="width: 70px">
+                    <option <? if ($mod_ap_hw_mode == "a") echo "selected"?> >a</option>
+                    <option <? if ($mod_ap_hw_mode == "b") echo "selected"?> >b</option>
+                    <option <? if ($mod_ap_hw_mode == "g") echo "selected"?> >g</option>
+                </select>
+                
+                <br>
+                
+                <span style="width: 70px; display: inline-block;">channel</span>
+                <select class="btn btn-default btn-sm" id="ap_channel" onchange="setOptionSelect(this, 'mod_ap_channel')" style="width: 70px">
+                    
+                </select>
+                
+                <br>
+                
+                <span style="width: 70px; display: inline-block;">country</span>
+                <select class="btn btn-default btn-sm" id="ap_country_code" onchange="setOptionSelect(this, 'mod_ap_country_code')" style="width: 70px">
+                    
+                </select>
+                
+                <!--
+                <br><br>
+                
+                <input id="ap_ht_capab_enabled" type="checkbox" name="my-checkbox" <? if ($mod_ap_ht_capab_enabled == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_ap_ht_capab_enabled')" >
+                ht_capab
+                <br>
+                <input id="ap_ht_capab" class="form-control input-sm" placeholder="ht_capab" value="<?=$mod_ap_ht_capab;?>" style="width: 145px; display: inline-block; " type="text" />
+                <input class="btn btn-default btn-sm" type="submit" value="save" onclick="setOption('ap_ht_capab', 'mod_ap_ht_capab')">
+                -->
+                
+                <br><br>
+                                
+                <input id="ap_ht_capab_enabled" type="checkbox" name="my-checkbox" <? if ($mod_ap_ht_capab_enabled == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_ap_ht_capab_enabled')" >
+                ht_capab
+                <br>
+                <form action="includes/save.php" method="POST">
+                    <input id="ap_ht_capab" name="ap_ht_capab" class="form-control input-sm" placeholder="ht_capab" value="<?=$mod_ap_ht_capab;?>" style="width: 145px; display: inline-block; " type="text" />
+                    <input class="btn btn-default btn-sm" type="submit" value="save">
+                </form>
+                
+                <br>
+                
+                <input id="mod_ap_wme_enabled" type="checkbox" name="my-checkbox" <? if ($mod_ap_wme_enabled == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_ap_wme_enabled')" >
+                wme_enabled
+                <br>
+                <input id="mod_ap_wmm_enabled" type="checkbox" name="my-checkbox" <? if ($mod_ap_wmm_enabled == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_ap_wmm_enabled')" >
+                wmm_enabled
+                <br>
+                <input id="mod_ap_ieee80211n" type="checkbox" name="my-checkbox" <? if ($mod_ap_ieee80211n == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_ap_ieee80211n')" >
+                ieee80211n
+                
+            </h5>
+            
+            <h5>
+                <input id="mod_ap_karma_loud" type="checkbox" name="my-checkbox" <? if ($mod_ap_karma_loud == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_ap_karma_loud')" >
+                karma_loud (Mana only)
+            </h5>
+            
+            <br>
+            
+            <!--
             <h4>Blacklist | Whitelist</h4>
+            -->
             Filter Station
             <br>
             <div class="btn-group btn-group-sm" data-toggle="buttons">
@@ -396,9 +463,62 @@ Loading, please wait...
                 <label class="btn btn-default <? if ($mod_filter_karma_ssid == "blacklist") echo "active" ?>">
                   <input type="radio" name="mod_filter_karma_ssid" id="blacklist" autocomplete="off" <? if ($mod_filter_karma_ssid == "blacklist") echo "checked" ?> > Blacklist
                 </label>
-            </div> 
+            </div>
             
-            <hr>
+            <script>
+                var country_code = ["AT","AU","BE","BR","CA","CH","CN","CY","CZ","DE","DK","EE","ES","FI","FR","GB","GR","HK","HU","ID","IE","IL","ILO",
+                                    "IN","IS","IT","J1","JP","KE","KR","LT","LU","LV","MY","NL","NO","NZ","PH","PL","PT","SE","SG","SI","SK","TH","TW",
+                                    "US","USE","USL","ZA"];
+                for(var i in country_code) {
+                    if (country_code[i] == "<?=$mod_ap_country_code?>") {
+                        $("#ap_country_code").append('<option value='+country_code[i]+' selected>'+country_code[i]+'</option>');
+                    } else {
+                        $("#ap_country_code").append('<option value='+country_code[i]+'>'+country_code[i]+'</option>');
+                    }
+                }
+                
+                var channel_2ghz = ["-",0,1,2,3,4,5,6,7,8,9,10,11,12,13,14];
+                var channel_5ghz = ["-",0,36,40,44,48];
+                var stored_hw_mode = "<?=$mod_ap_hw_mode?>";
+                var stored_channel = "<?=$mod_ap_channel?>";
+                
+                function setChannel() {
+                    hw_mode = $("#ap_hw_mode").val();
+                    if (hw_mode == "a") {
+                        channels = channel_5ghz;
+                    } else {
+                        channels = channel_2ghz;
+                    }
+                    $("#ap_channel").empty();
+                    for(var i in channels) {
+                        //console.log(i +"|"+channels[i])
+                        if (channels[i] == stored_channel) {
+                            $("#ap_channel").append('<option value='+channels[i]+' selected>'+channels[i]+'</option>');
+                        } else {
+                            $("#ap_channel").append('<option value='+channels[i]+'>'+channels[i]+'</option>');
+                            //$("#ap_channel").append('<option value='+i+'>'+i+'</option>');
+                        }
+                    }
+                    //console.log($("#ap_channel")[0])
+                    //console.log($("#ap_channel").val())
+                    setOptionSelect($("#ap_channel")[0], 'mod_ap_channel')
+                }
+                
+                setChannel()
+                
+                $("#ap_hw_mode").change(function() {
+                    //$("#ap_channel").load("textdata/" + $(this).val() + ".txt");
+                    setChannel()
+                 });
+            </script>
+            
+        </div>
+
+        <!-- END AP -->
+        
+        <!-- WORKER -->
+
+        <div id="tab-worker" class="history">
             
             <h4>Scatter</h4>
             
@@ -465,7 +585,7 @@ Loading, please wait...
             
         </div>
         
-        <!-- END CONFIG -->
+        <!-- END WORKER -->
         
         <!-- DNS-DHCP-CONFIG -->
 
@@ -491,6 +611,7 @@ Loading, please wait...
                     setOption('dhcp_lease_end', 'mod_dhcp_lease_end');
                 }
             </script>
+            
             <hr>
             
             <h4>
@@ -519,6 +640,18 @@ Loading, please wait...
             
             <input id="mod_dns_spoof_all" type="checkbox" name="my-checkbox" <? if ($mod_dns_spoof_all == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_dns_spoof_all')" >
             SPOOF ALL (option dnsmasq)
+            
+            <hr>
+            <!--
+            <input id="mod_dnsmasq_dhcp_script" type="checkbox" name="my-checkbox" <? if ($mod_dnsmasq_dhcp_script == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_dnsmasq_dhcp_script')" >
+            DNSMASQ SCRIPT
+            
+            <br>
+            -->
+            
+            <input id="mod_network_manager_stop" type="checkbox" name="my-checkbox" <? if ($mod_network_manager_stop == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_network_manager_stop')" >
+            NETWORK-MANAGER (stop)
+            
             <!--
             <br>
             <input id="dns_spoof_all_ip" class="form-control input-sm" placeholder="BSSID" value="<?=$mod_dns_spoof_all_ip;?>" style="width: 120px; display: inline-block; font-family: monospace " type="text" />
@@ -577,7 +710,7 @@ Loading, please wait...
                 //$data = implode("\n",array_reverse($data_array));
                 
             ?>
-            <textarea id="output" class="module-content" style="font-family: courier;"><?=htmlspecialchars($data)?></textarea>
+            <textarea id="output" class="module-content" style="font-family: monospace, courier;"><?=htmlspecialchars($data)?></textarea>
             <input type="hidden" name="type" value="logs">
             </form>
             

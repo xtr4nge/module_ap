@@ -407,3 +407,10 @@ function loadingContent() {
     
     //$('#loading').hide();
 }
+
+function setOptionSelect(item, param) {
+	var e = document.getElementById(item.id);
+	var value = e.options[e.selectedIndex].text;
+	
+    $.getJSON('../api/includes/ws_action.php?api=/config/module/ap/'+param+'/'+value, function(data) {});
+}
