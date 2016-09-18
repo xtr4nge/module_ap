@@ -494,6 +494,7 @@ function setNetworkManager() {
     global $io_in_iface;
     global $bin_sed;
     global $bin_echo;
+    global $mod_network_manager_stop;
     
     if ($mod_network_manager_stop == "1") {
         $exec = "/etc/init.d/network-manager stop";
