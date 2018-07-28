@@ -1,6 +1,6 @@
 <? 
 /*
-    Copyright (C) 2013-2016 xtr4nge [_AT_] gmail.com
+    Copyright (C) 2013-2018 xtr4nge [_AT_] gmail.com
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -426,8 +426,8 @@ Loading, please wait...
             </h5>
             
             <h5>
-                <input id="mod_ap_karma_loud" type="checkbox" name="my-checkbox" <? if ($mod_ap_karma_loud == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_ap_karma_loud')" >
-                karma_loud (Mana only)
+                <input id="mod_ap_mana_loud" type="checkbox" name="my-checkbox" <? if ($mod_ap_mana_loud == "1") echo "checked"; ?> onclick="setCheckbox(this, 'mod_ap_mana_loud')" >
+                mana_loud (Mana only)
             </h5>
             
             <br>

@@ -1046,10 +1046,10 @@ if($service != ""  and $ap_mode == "3") {
                 
                 $hostapd_config_file = "$mod_path/includes/conf/hostapd-secure.conf";
                 
-                if ($mod_ap_karma_loud == "1") {
-                    setHostapdOption("karma_loud", "1", $hostapd_config_file);
+                if ($mod_ap_mana_loud == "1") {
+                    setHostapdOption("mana_loud", "1", $hostapd_config_file);
                 } else {
-                    setHostapdOption("karma_loud", "0", $hostapd_config_file);
+                    setHostapdOption("mana_loud", "0", $hostapd_config_file);
                 }
                 
                 // SET HOSTAPD
@@ -1087,10 +1087,10 @@ if($service != ""  and $ap_mode == "3") {
                 
                 $hostapd_config_file = "$mod_path/includes/conf/hostapd.conf";
                 
-                if ($mod_ap_karma_loud == "1") {
-                    setHostapdOption("karma_loud", "1", $hostapd_config_file);
+                if ($mod_ap_mana_loud == "1") {
+                    setHostapdOption("mana_loud", "1", $hostapd_config_file);
                 } else {
-                    setHostapdOption("karma_loud", "0", $hostapd_config_file);
+                    setHostapdOption("mana_loud", "0", $hostapd_config_file);
                 }
                 
                 // SET HOSTAPD
