@@ -1,6 +1,6 @@
 <?
 $mod_name="ap";
-$mod_version="1.5";
+$mod_version="1.6";
 $mod_path="/usr/share/fruitywifi/www/modules/$mod_name";
 //$mod_logs="$log_path/$mod_name.log";
 $mod_logs="$log_path/dnsmasq.log";
@@ -37,7 +37,7 @@ $mod_ap_wme_enabled="0";
 $mod_ap_wmm_enabled="0";
 $mod_ap_ht_capab_enabled="0";
 $mod_ap_ht_capab="[HT20][SHORT-GI-20][HT40+][SHORT-GI-40][TX-STBC][RX-STBC2]";
-$mod_ap_karma_loud="0";
+$mod_ap_mana_loud="0";
 
 # OTHER
 $mod_network_manager_stop="1";
