@@ -621,9 +621,9 @@ if ($worker == "scatter") {
         $opt = "";
         
         if ($mod_filter_scatter_bssid == "1") {
-            $opt .= " -b $mod_scatter_bssid";
+            $opt .= "-b $mod_scatter_bssid";
         } else {
-            $opt .= " -b " . getMAC($io_in_iface);
+            $opt .= "-b " . getMAC($io_in_iface);
         }
         
         if ($mod_filter_scatter_station == "1") $opt .= " -s $mod_scatter_station";
@@ -653,13 +653,13 @@ if ($worker == "polite") {
     if ($action == "start") {
         
         if ($mod_filter_scatter_bssid == "1") {
-            $opt .= " -b $mod_scatter_bssid";
+            $opt .= "-b $mod_scatter_bssid";
         } else {
-            $opt .= " -b " . getMAC($io_in_iface);
+            $opt .= "-b " . getMAC($io_in_iface);
         }
         
         //$exec = "python ap-polite.py -i mon0 -s $mod_filter_polite_station -e $mod_filter_polite_ssid -b $use_bssid  > /dev/null &";
-        $exec = "python ap-polite.py -i mon0 -s $mod_filter_polite_station -e $mod_filter_polite_ssid $opt  > /dev/null &";
+        $exec = "python ap-polite.py -i mon0 $opt -s $mod_filter_polite_station -e $mod_filter_polite_ssid > /dev/null &";
         exec_fruitywifi($exec);
     } else if ($action == "stop") {
         killRegex("ap-polite.py");
