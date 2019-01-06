@@ -679,10 +679,10 @@ if ($worker == "karma") {
 
 if ($worker == "mana") {
     if ($action == "start") {
-        $exec = "/usr/share/fruitywifi/www/modules/mana/includes/hostapd_cli -p /var/run/hostapd karma_enable";
+        $exec = "/usr/share/fruitywifi/www/modules/mana/includes/hostapd_cli -p /var/run/hostapd mana_enable";
         exec_fruitywifi($exec);
     } else if ($action == "stop") {
-        $exec = "/usr/share/fruitywifi/www/modules/mana/includes/hostapd_cli -p /var/run/hostapd karma_disable";
+        $exec = "/usr/share/fruitywifi/www/modules/mana/includes/hostapd_cli -p /var/run/hostapd mana_disable";
         exec_fruitywifi($exec);
     }
 }
