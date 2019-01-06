@@ -180,9 +180,9 @@ if ($logfile != "" and $action == "delete") {
         $mode_name = "Hostapd-Mana";
         $log_ap = "/usr/share/fruitywifi/logs/mana.log";
         
-        $exec = "sudo /usr/share/fruitywifi/www/modules/mana/includes/hostapd_cli -p /var/run/hostapd karma_get_state | grep 'ENABLE'";
+        $exec = "sudo /usr/share/fruitywifi/www/modules/mana/includes/hostapd_cli -p /var/run/hostapd mana_get_state | tail -1 | grep 'MANA EN'";
         $ismoduleup = exec_fruitywifi("$exec");
-        if ($ismoduleup[0] == "KARMA ENABLED") {
+        if ($ismoduleup[0] == "MANA ENABLED") {
             echo "&nbsp;&nbsp;&nbsp; Mana  <font color='lime'><b>enabled</b></font>.&nbsp; | <a href='includes/module_action.php?worker=mana&action=stop&page=module'><b>stop</b></a><br>";
         } else { 
             echo "&nbsp;&nbsp;&nbsp; Mana  <font color='red'><b>disabled</b></font>. | <a href='includes/module_action.php?worker=mana&action=start&page=module'><b>start</b></a><br>"; 
